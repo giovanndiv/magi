@@ -1,0 +1,14 @@
+# /etc/fail2ban/jail.local
+# Managed by Ansible — MAGI system, NERV
+
+[DEFAULT]
+bantime  = {{ fail2ban_ssh_bantime }}
+findtime = {{ fail2ban_ssh_findtime }}
+maxretry = {{ fail2ban_ssh_maxretry }}
+
+[sshd]
+enabled  = true
+port     = ssh
+filter   = sshd
+logpath  = %(sshd_log)s
+backend  = %(sshd_backend)s

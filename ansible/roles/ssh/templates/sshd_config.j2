@@ -1,0 +1,26 @@
+# /etc/ssh/sshd_config.d/99-nerv.conf
+# Managed by Ansible — MAGI system, NERV
+#
+# SSH is restricted to the AT-Field (Tailscale) interface.
+# New connections from outside the AT-Field will be refused.
+
+# Bind to the AT-Field interface only.
+ListenAddress {{ tailscale_ip.stdout | trim }}
+
+# Authentication
+PermitRootLogin no
+AllowUsers {{ ssh_allowed_users | join(' ') }}
+
+# Disable password authentication.
+# Requires SSH public keys to be deployed to all devices before enabling.
+# Once keys are in place, set this to 'no' and re-run the playbook.
+PasswordAuthentication yes
+# PasswordAuthentication no
+
+# Hardening
+MaxAuthTries 3
+LoginGraceTime 30
+X11Forwarding no
+AllowAgentForwarding no
+AllowTcpForwarding no
+PrintMotd no

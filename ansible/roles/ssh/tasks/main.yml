@@ -1,0 +1,15 @@
+---
+- name: Get Tailscale IPv4 address
+  command: tailscale ip -4
+  register: tailscale_ip
+  changed_when: false
+
+- name: Deploy hardened sshd config
+  template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config.d/99-nerv.conf
+    owner: root
+    group: root
+    mode: "0600"
+    validate: /usr/sbin/sshd -t -f /dev/null -o "Include %s"
+  notify: Restart sshd

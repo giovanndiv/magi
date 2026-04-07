@@ -1,0 +1,26 @@
+---
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Update apt cache and upgrade packages
+  apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install essential packages
+  apt:
+    name:
+      - curl
+      - sudo
+      - git
+      - htop
+      - ufw
+      - ca-certificates
+      - fail2ban
+      - unattended-upgrades
+      - apt-listchanges
+      - gnupg
+      - lsb-release
+    state: present

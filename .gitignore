@@ -1,6 +1,5 @@
 *.env
 .idea
-docker-compose.override.yml
 /homepage/logs
 /homepage/*.yaml
 /homepage/*.css
@@ -26,3 +25,13 @@ docker-compose.override.yml
 /autobrr
 !/cleanuparr/blacklist.json
 !/cleanuparr/logs/.gitkeep
+# Ansible
+ansible/hosts
+ansible/host_vars/*/vault.yml
+ansible/*.retry
+
+# Claude Code
+.claude/
+
+# General
+.DS_Store

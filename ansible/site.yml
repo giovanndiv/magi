@@ -1,0 +1,18 @@
+---
+# MAGI System — nerv host provisioning
+# Roles run in dependency order: tailscale must precede firewall and ssh,
+# since both restrict access to the AT-Field (Tailscale) interface.
+
+- name: Provision nerv
+  hosts: nerv
+  become: true
+
+  roles:
+    - system
+    - users
+    - tailscale
+    - firewall
+    - ssh
+    - docker
+    - storage
+    - security

@@ -1,0 +1,35 @@
+---
+# System
+timezone: America/New_York
+
+# Storage
+# Verify device names with `lsblk` on the target host before running.
+disk1_device: /dev/sdb
+disk2_device: /dev/sdc
+disk1_mount: /mnt/disk1
+disk2_mount: /mnt/disk2
+data_mount: /mnt/data
+
+# DESTRUCTIVE: set to true only if drives need to be formatted.
+# This will erase all data on disk1_device and disk2_device.
+format_drives: false
+
+# SSH
+# Users permitted to log in via SSH.
+ssh_allowed_users:
+  - shinji
+  - gendo
+
+# Tailscale (AT-Field)
+# Optional: provide a Tailscale auth key for unattended authentication.
+# If unset, the playbook will pause and prompt for manual `tailscale up`.
+# tailscale_auth_key: ""
+
+# Security
+fail2ban_ssh_bantime: 1h
+fail2ban_ssh_findtime: 10m
+fail2ban_ssh_maxretry: 5
+
+# Set to true to allow unattended-upgrades to reboot automatically.
+unattended_upgrades_auto_reboot: false
+unattended_upgrades_reboot_time: "03:00"

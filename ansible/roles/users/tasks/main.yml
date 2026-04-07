@@ -1,0 +1,19 @@
+---
+- name: Create gendo (admin)
+  user:
+    name: gendo
+    comment: Gendo Ikari
+    groups: sudo
+    append: true
+    shell: /bin/bash
+    create_home: true
+    password: "{{ vault_gendo_password | password_hash('sha512') }}"
+
+- name: Create shinji (standard user)
+  user:
+    name: shinji
+    comment: Shinji Ikari
+    groups: []
+    shell: /bin/bash
+    create_home: true
+    password: "{{ vault_shinji_password | password_hash('sha512') }}"

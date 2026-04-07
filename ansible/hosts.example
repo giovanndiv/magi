@@ -1,0 +1,6 @@
+# Copy to `hosts` and set the correct IP before running.
+# Initial run: use the LAN IP (SSH not yet restricted to AT-Field).
+# After provisioning: use the Tailscale IP (100.x.x.x).
+
+[nerv]
+nerv ansible_host=192.168.x.x ansible_user=gendo ansible_become_password="{{ vault_become_password }}"

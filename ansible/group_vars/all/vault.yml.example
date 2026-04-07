@@ -1,0 +1,9 @@
+# Copy to vault.yml, fill in real values, then encrypt:
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# To edit later:
+#   ansible-vault edit group_vars/all/vault.yml
+
+vault_gendo_password: "changeme"
+vault_shinji_password: "changeme"
+vault_become_password: "changeme"

@@ -1,0 +1,69 @@
+---
+- name: Install mergerfs
+  apt:
+    name: mergerfs
+    state: present
+
+# DESTRUCTIVE: format_drives must be explicitly set to true in vars.yml.
+# This will erase all existing data on the configured devices.
+- name: Format disk1 as ext4
+  community.general.filesystem:
+    fstype: ext4
+    dev: "{{ disk1_device }}"
+    force: false
+  when: format_drives | bool
+
+- name: Format disk2 as ext4
+  community.general.filesystem:
+    fstype: ext4
+    dev: "{{ disk2_device }}"
+    force: false
+  when: format_drives | bool
+
+- name: Create mount points
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: shinji
+    group: shinji
+    mode: "0755"
+  loop:
+    - "{{ disk1_mount }}"
+    - "{{ disk2_mount }}"
+    - "{{ data_mount }}"
+
+- name: Mount disk1
+  ansible.posix.mount:
+    path: "{{ disk1_mount }}"
+    src: "{{ disk1_device }}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+
+- name: Mount disk2
+  ansible.posix.mount:
+    path: "{{ disk2_mount }}"
+    src: "{{ disk2_device }}"
+    fstype: ext4
+    opts: defaults,nofail
+    state: mounted
+
+- name: Mount mergerfs pool at /mnt/data
+  ansible.posix.mount:
+    path: "{{ data_mount }}"
+    src: "{{ disk1_mount }}:{{ disk2_mount }}"
+    fstype: fuse.mergerfs
+    opts: >-
+      defaults,allow_other,use_ino,
+      cache.files=off,
+      moveonemost=mostfree,
+      dropcacheonclose=true,
+      category.create=mfs
+    state: mounted
+
+- name: Set ownership of data mount
+  file:
+    path: "{{ data_mount }}"
+    owner: shinji
+    group: shinji
+    state: directory

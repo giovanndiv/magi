@@ -1,0 +1,51 @@
+---
+- name: Download Tailscale install script
+  get_url:
+    url: https://tailscale.com/install.sh
+    dest: /tmp/tailscale-install.sh
+    mode: "0755"
+
+- name: Run Tailscale install script
+  command: /tmp/tailscale-install.sh
+  args:
+    creates: /usr/bin/tailscale
+
+- name: Enable and start tailscaled
+  systemd:
+    name: tailscaled
+    enabled: true
+    state: started
+
+# --- AT-Field authentication ---
+# If tailscale_auth_key is defined in vars.yml or vault, use it for unattended auth.
+# Otherwise, pause here: SSH will be restricted to the AT-Field after this playbook
+# completes, so Tailscale must be authenticated before continuing.
+
+- name: Authenticate with Tailscale auth key (unattended)
+  command: tailscale up --authkey={{ tailscale_auth_key }} --accept-routes
+  when: tailscale_auth_key is defined and tailscale_auth_key | length > 0
+  no_log: true
+
+- name: Pause for manual Tailscale authentication
+  pause:
+    prompt: |
+
+      Tailscale (AT-Field) is installed but not authenticated.
+      On nerv, run:
+
+          sudo tailscale up
+
+      Follow the URL to authenticate, then press Enter here to continue.
+      The firewall and SSH roles will restrict access to the AT-Field after this point.
+  when: tailscale_auth_key is not defined or tailscale_auth_key | length == 0
+
+- name: Wait for tailscale0 interface to be available
+  wait_for:
+    timeout: 30
+  changed_when: false
+
+- name: Verify Tailscale is connected
+  command: tailscale status
+  register: tailscale_status
+  changed_when: false
+  failed_when: "'Logged out' in tailscale_status.stdout"

@@ -1,0 +1,22 @@
+// /etc/apt/apt.conf.d/50unattended-upgrades
+// Managed by Ansible — MAGI system, NERV
+
+Unattended-Upgrade::Allowed-Origins {
+    "${distro_id}:${distro_codename}";
+    "${distro_id}:${distro_codename}-security";
+    "${distro_id}ESMApps:${distro_codename}-apps-security";
+    "${distro_id}ESM:${distro_codename}-infra-security";
+};
+
+// Remove unused kernel packages and dependencies after upgrade.
+Unattended-Upgrade::Remove-Unused-Kernel-Packages "true";
+Unattended-Upgrade::Remove-New-Unused-Dependencies "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+
+// Reboot automatically if required (e.g., after kernel update).
+Unattended-Upgrade::Automatic-Reboot "{{ unattended_upgrades_auto_reboot | lower }}";
+Unattended-Upgrade::Automatic-Reboot-Time "{{ unattended_upgrades_reboot_time }}";
+
+// Email notifications (optional — set an address to enable).
+// Unattended-Upgrade::Mail "gendo@geofront.com";
+// Unattended-Upgrade::MailReport "on-change";

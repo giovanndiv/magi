@@ -1,0 +1,33 @@
+---
+# UFW configuration.
+# SSH is allowed only on the AT-Field (tailscale0) interface.
+# Existing connections are not affected by UFW changes, so the current
+# Ansible session will not be dropped mid-play.
+
+- name: Set UFW default policy (deny incoming, allow outgoing)
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: Allow SSH on AT-Field (tailscale0) only
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+    interface: tailscale0
+    direction: in
+    comment: SSH via AT-Field only
+
+- name: Allow Tailscale WireGuard UDP port
+  ufw:
+    rule: allow
+    port: "41641"
+    proto: udp
+    comment: Tailscale AT-Field WireGuard
+
+- name: Enable UFW
+  ufw:
+    state: enabled
