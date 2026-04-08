@@ -6,7 +6,10 @@ function update_arr_config {
   echo "Updating ${container} configuration..."
   until [ -f "${CONFIG_ROOT:-.}"/"$container"/config.xml ]; do sleep 1; done
   sed -i.bak "s/<UrlBase><\/UrlBase>/<UrlBase>\/$1<\/UrlBase>/" "${CONFIG_ROOT:-.}"/"$container"/config.xml && rm "${CONFIG_ROOT:-.}"/"$container"/config.xml.bak
-  CONTAINER_NAME_UPPER=$(echo "$container" | tr '[:lower:]' '[:upper:]')
+  if [ -n "$2" ]; then
+    sed -i.bak "s/<Port>[0-9]*<\/Port>/<Port>$2<\/Port>/" "${CONFIG_ROOT:-.}"/"$container"/config.xml && rm "${CONFIG_ROOT:-.}"/"$container"/config.xml.bak
+  fi
+  CONTAINER_NAME_UPPER=$(echo "$container" | tr '[:lower:]-' '[:upper:]_')
   sed -i.bak 's/^'"${CONTAINER_NAME_UPPER}"'_API_KEY=.*/'"${CONTAINER_NAME_UPPER}"'_API_KEY='"$(sed -n 's/.*<ApiKey>\(.*\)<\/ApiKey>.*/\1/p' "${CONFIG_ROOT:-.}"/"$container"/config.xml)"'/' .env && rm .env.bak
   echo "Update of ${container} configuration complete, restarting..."
   docker compose restart "$container"
@@ -41,6 +44,10 @@ function update_bazarr_config {
 for container in $(docker ps --format '{{.Names}}'); do
   if [[ "$container" =~ ^(radarr|sonarr|lidarr|prowlarr)$ ]]; then
     update_arr_config "$container"
+  elif [[ "$container" == "sonarr-anime" ]]; then
+    update_arr_config "sonarr-anime" "8990"
+  elif [[ "$container" == "radarr-anime" ]]; then
+    update_arr_config "radarr-anime" "7979"
   elif [[ "$container" =~ ^(bazarr)$ ]]; then
     update_bazarr_config "$container"
   elif [[ "$container" =~ ^(qbittorrent)$ ]]; then

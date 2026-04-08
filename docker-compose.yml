@@ -95,6 +95,66 @@ services:
       - homepage.widget.type=radarr
       - homepage.widget.url=http://radarr:7878/radarr
       - homepage.widget.key=${RADARR_API_KEY}
+  sonarr-anime:
+    image: lscr.io/linuxserver/sonarr
+    container_name: sonarr-anime
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${GROUP_ID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/sonarr-anime:/config
+      - ${DATA_ROOT}:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:8990/sonarr-anime/ping"]
+      interval: 1m
+      retries: 10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.sonarr-anime.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/sonarr-anime`))
+      - traefik.http.routers.sonarr-anime.tls=true
+      - traefik.http.routers.sonarr-anime.tls.certresolver=myresolver
+      - traefik.http.services.sonarr-anime.loadbalancer.server.port=8990
+      - homepage.group=Media
+      - homepage.name=Sonarr Anime
+      - homepage.icon=sonarr.png
+      - homepage.href=/sonarr-anime
+      - homepage.description=Anime series management
+      - homepage.weight=1
+      - homepage.widget.type=sonarr
+      - homepage.widget.url=http://sonarr-anime:8990/sonarr-anime
+      - homepage.widget.key=${SONARR_ANIME_API_KEY}
+  radarr-anime:
+    image: lscr.io/linuxserver/radarr
+    container_name: radarr-anime
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${GROUP_ID}
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/radarr-anime:/config
+      - ${DATA_ROOT}:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:7979/radarr-anime/ping"]
+      interval: 1m
+      retries: 10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.radarr-anime.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/radarr-anime`))
+      - traefik.http.routers.radarr-anime.tls=true
+      - traefik.http.routers.radarr-anime.tls.certresolver=myresolver
+      - traefik.http.services.radarr-anime.loadbalancer.server.port=7979
+      - homepage.group=Media
+      - homepage.name=Radarr Anime
+      - homepage.icon=radarr.png
+      - homepage.href=/radarr-anime
+      - homepage.description=Anime movies management
+      - homepage.weight=2
+      - homepage.widget.type=radarr
+      - homepage.widget.url=http://radarr-anime:7979/radarr-anime
+      - homepage.widget.key=${RADARR_ANIME_API_KEY}
   lidarr:
     image: lscr.io/linuxserver/lidarr
     container_name: lidarr
