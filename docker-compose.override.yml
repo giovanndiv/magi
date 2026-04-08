@@ -1,0 +1,9 @@
+services:
+  jellyfin:
+    devices:
+      - /dev/dri/renderD128:/dev/dri/renderD128
+      - /dev/dri/card0:/dev/dri/card0
+    # Grant access to the render device group.
+    # Verify the GID on nerv before deploying: getent group render
+    group_add:
+      - "992"
