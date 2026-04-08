@@ -144,3 +144,52 @@ All configuration is in `.env` (copy from `.env.example`). Key variables:
 - `HOSTNAME=magi.geofront.com` — used for Traefik routing and TLS certs (domain is a placeholder until finalized)
 - `COMPOSE_FILE` — colon-separated list of compose files to load
 - `COMPOSE_PROFILES` — comma-separated optional profile names to enable
+
+## Post-Deploy Manual Steps
+
+Steps that cannot be automated and must be done by hand after first `docker compose up -d`.
+
+### 1. Run update-config.sh
+
+After the stack is up and all *arr apps have initialized their `config.xml` files:
+
+```bash
+./update-config.sh
+```
+
+This populates API keys in `.env` and sets URL bases. Run it before configuring Homepage widgets or any service that reads from `.env`.
+
+### 2. Jellyfin — Hardware Acceleration & Media Libraries
+
+**Hardware acceleration:**
+1. Dashboard → Playback → Transcoding
+2. Set Hardware acceleration to **Intel QuickSync (QSV)**
+3. Set VA-API device to `/dev/dri/renderD128`
+4. Enable all codec checkboxes (H.264, HEVC, MPEG-2, VC-1, VP8, VP9, AV1, etc.)
+5. Save
+
+**Media libraries** — add one library per folder:
+| Library type | Path |
+|---|---|
+| Movies | `/data/media/movies` |
+| TV Shows | `/data/media/tv` |
+| Anime (TV Shows) | `/data/media/anime` |
+| Music | `/data/media/music` |
+
+### 3. Seerr — Pre-create Config Directory
+
+Overseerr/Jellyseerr requires the logs directory to exist with the correct ownership before first start, otherwise it fails to write logs and may crash:
+
+```bash
+sudo mkdir -p ./seerr/logs
+sudo chown -R 1000:1000 ./seerr
+```
+
+Restart the container after creating the directory if it was already started.
+
+### 4. AdGuard Home — Setup Wizard
+
+On first access, AdGuard Home presents a setup wizard:
+1. Complete the wizard (set admin credentials, choose listen interfaces)
+2. After setup, navigate to Filters → DNS blocklists and add desired blocklists
+3. Verify the AdGuard DNS rewrite for `geofront.com` → LAN IP is in place (Filters → DNS rewrites) so local clients resolve to the LAN address instead of the Tailscale/AT-Field IP
