@@ -193,3 +193,23 @@ On first access, AdGuard Home presents a setup wizard:
 1. Complete the wizard (set admin credentials, choose listen interfaces)
 2. After setup, navigate to Filters → DNS blocklists and add desired blocklists
 3. Verify the AdGuard DNS rewrite for `geofront.com` → LAN IP is in place (Filters → DNS rewrites) so local clients resolve to the LAN address instead of the Tailscale/AT-Field IP
+
+### 5. Samba — Set gendo's Samba Password
+
+The Ansible playbook installs Samba and configures the `[geofront]` share, but cannot set the Samba password non-interactively without storing it in plaintext. After provisioning, set it manually:
+
+```bash
+sudo smbpasswd -a gendo
+```
+
+The share is accessible over the AT-Field (tailscale0) only. Connect from a client using:
+
+```
+\\<tailscale-ip>\geofront
+```
+
+or (if DNS resolves via AdGuard Home):
+
+```
+\\nerv\geofront
+```

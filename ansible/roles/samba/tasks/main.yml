@@ -1,0 +1,48 @@
+---
+# Samba share for /mnt/data, accessible over the AT-Field (tailscale0) only.
+#
+# NOTE: smbpasswd for gendo must be set manually after provisioning.
+# Ansible cannot set Samba passwords non-interactively without storing
+# the password in plaintext. After the playbook runs:
+#
+#   sudo smbpasswd -a gendo
+#
+# See post-deploy manual steps in CLAUDE.md for details.
+
+- name: Install samba
+  apt:
+    name: samba
+    state: present
+
+- name: Deploy smb.conf
+  template:
+    src: smb.conf.j2
+    dest: /etc/samba/smb.conf
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart smbd
+
+- name: Enable and start smbd
+  systemd:
+    name: smbd
+    enabled: true
+    state: started
+
+- name: Allow Samba (SMB) on AT-Field (tailscale0) only
+  ufw:
+    rule: allow
+    port: "445"
+    proto: tcp
+    interface: tailscale0
+    direction: in
+    comment: Samba SMB via AT-Field only
+
+- name: Allow Samba (NetBIOS) on AT-Field (tailscale0) only
+  ufw:
+    rule: allow
+    port: "139"
+    proto: tcp
+    interface: tailscale0
+    direction: in
+    comment: Samba NetBIOS via AT-Field only
