@@ -648,3 +648,4 @@ Replace:
 - `#LidSwitchIgnoreInhibited=yes` by `LidSwitchIgnoreInhibited=no`
 
 Then restart: `sudo service systemd-logind restart`
+# test
