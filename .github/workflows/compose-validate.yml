@@ -1,0 +1,22 @@
+name: Validate Docker Compose
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Copy .env.example to .env
+        run: cp .env.example .env
+
+      - name: Validate compose config
+        env:
+          COMPOSE_FILE: docker-compose.yml:docker-compose.override.yml
+        run: docker compose config --quiet
