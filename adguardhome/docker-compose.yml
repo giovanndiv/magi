@@ -55,7 +55,7 @@ services:
       - homepage.description=DNS Adblocker
       - homepage.weight=0
       - homepage.widget.type=adguard
-      - homepage.widget.url=https://${ADGUARD_HOSTNAME}
+      - homepage.widget.url=http://adguardhome:3000
       - homepage.widget.username=${ADGUARD_USERNAME}
       - homepage.widget.password=${ADGUARD_PASSWORD}
     profiles:
