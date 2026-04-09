@@ -45,7 +45,6 @@
     /mnt/data/torrents)
   - seerr config directory pre-creation with correct ownership
 - Test and validate full Ansible playbook end-to-end on a fresh Debian install
-- Fix claude-code-action GitHub workflow (currently failing with OIDC token error)
 
 ## Known Issues & Solutions
 
@@ -78,9 +77,6 @@
   `gh pr create --base master --head your-branch --title "title"`
 - **GitHub Actions comment-triggered workflows only run from master** — workflows
   on feature branches won't trigger on PR comments until merged to master.
-- **claude-code-action OIDC token error** — current known issue, being debugged.
-  Workaround: manual code review via git diff pasted to Claude chat.
-
 ### Server Setup
 - **sudo not installed on fresh Debian** — must su to root first and install:
   `su - && apt install curl sudo git htop ufw -y && usermod -aG sudo gendo`
