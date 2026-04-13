@@ -415,8 +415,6 @@ services:
       - TZ=${TIMEZONE}
     volumes:
       - ${CONFIG_ROOT:-.}/gluetun:/gluetun
-    ports:
-      - 8080:8080
     restart: always
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "https://ipinfo.io"]
