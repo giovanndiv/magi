@@ -15,7 +15,13 @@
 - Vaultwarden: add to COMPOSE_FILE when ready
 - Immich: add to COMPOSE_FILE when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
-- Flaresolverr: add to COMPOSE_PROFILES when ready
+- Flaresolverr: already added to COMPOSE_PROFILES ✓
+- Cleanuparr: add to compose for automated queue cleanup (removes stalled/
+  malicious downloads, triggers re-search). Replaces cleanuparr from upstream repo.
+  Image: ghcr.io/cleanuparr/cleanuparr:latest. Has web UI on port 11011.
+- Maintainerr: add to compose for long-term library management (removes 
+  unwatched content to free disk space). Add when library has significant content.
+  Complements Cleanuparr, not a replacement.
 
 ### Configuration
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
