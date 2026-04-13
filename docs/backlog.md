@@ -52,6 +52,13 @@
   - seerr config directory pre-creation with correct ownership
 - Test and validate full Ansible playbook end-to-end on a fresh Debian install
 
+## Maintenance
+
+- **VPN container scheduled restart**: Add a daily cron job on nerv to restart the vpn
+  container at 4am to prevent AirVPN WireGuard session stalling.
+  Command: `0 4 * * * docker restart vpn`
+  Add via `crontab -e` as gendo on nerv. Also consider encoding in Ansible.
+
 ## Known Issues & Solutions
 
 ### Permissions
@@ -67,6 +74,9 @@
   conflicts. shinji is now UID 1002. Containers run as UID 1000 (gendo).
 
 ### Networking
+- **AirVPN WireGuard session stalling**: VPN may appear connected but traffic stops
+  after extended uptime. Workaround: restart vpn container manually with
+  `docker restart vpn`. Long term fix: daily cron restart at 4am (see Maintenance).
 - **AdGuard port 68 conflicts with host dhcpcd** — removed ports 68/tcp and 68/udp
   from adguardhome/docker-compose.yml. AdGuard DHCP server disabled, DNS only.
 - **Verizon FiOS router DNS locked down** — cannot set custom DNS at router level.
