@@ -417,7 +417,7 @@ services:
       - ${CONFIG_ROOT:-.}/gluetun:/gluetun
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8000/v1/vpn/status"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:9999"]
       interval: 30s
       retries: 10
       start_period: 15s
