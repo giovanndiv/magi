@@ -13,6 +13,10 @@
 /qbittorrent
 /pia
 /pia-shared
+# Jellyfin runtime config (modified by container)
+/jellyfin/network.xml
+/jellyfin/encoding.xml
+/jellyfin/logging.default.json
 /letsencrypt
 /seerr
 /adguardhome/certs
