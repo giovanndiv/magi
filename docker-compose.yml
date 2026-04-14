@@ -452,6 +452,16 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:8
+    container_name: recyclarr
+    user: 1000:1000
+    volumes:
+      - ${CONFIG_ROOT:-.}/recyclarr:/config
+    environment:
+      - TZ=${TIMEZONE}
+      - CRON_SCHEDULE=@daily
+    restart: unless-stopped
   cleanuparr:
     image: ghcr.io/cleanuparr/cleanuparr:latest
     container_name: cleanuparr
