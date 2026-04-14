@@ -33,5 +33,18 @@ ansible/*.retry
 # Claude Code
 .claude/
 
+# Recyclarr (contains API keys, server-only)
+/recyclarr/
+
+# Gluetun runtime data
+/gluetun/
+
+# Service config directories (server-only)
+/sonarr-anime/
+/radarr-anime/
+
+# Editor swap files
+*.swp
+
 # General
 .DS_Store
