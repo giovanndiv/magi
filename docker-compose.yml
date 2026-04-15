@@ -304,7 +304,9 @@ services:
     profiles:
       - suggestarr
   flaresolverr:
-    image: 21hsmw/flaresolverr:nodriver
+    # Alternative 1 (original nodriver): 21hsmw/flaresolverr:nodriver
+    # Alternative 2 (pr-1300 fix): alexfozor/flaresolverr:pr-1300
+    image: ghcr.io/thephaseless/byparr:latest
     container_name: flaresolverr
     restart: always
     environment:
