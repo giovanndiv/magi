@@ -3,40 +3,41 @@
 ## Pending Tasks
 
 ### Infrastructure
-- Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml 
-  and adguardhome/docker-compose.yml
+- Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml
+  and adguardhome/docker-compose.yml (still pending)
 - Add recyclarr to docker-compose.yml (image: ghcr.io/recyclarr/recyclarr:8, 
   user 1000:1000, RECYCLARR_CREATE_CONFIG=true)
+- Daily VPN restart cron: add cron job on nerv as gendo:
+  `0 4 * * * docker restart vpn` (prevents AirVPN WireGuard session stalling)
 - Set up snapraid alongside mergerfs for parity protection on the 2x14TB drives
 - Get a second SSD for container config storage (current 128GB M.2 is OS + configs)
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 
 ### Services To Add
-- Vaultwarden: add to COMPOSE_FILE when ready
-- Immich: add to COMPOSE_FILE when ready (note: needs ~3-4GB RAM, heaviest service)
+- Vaultwarden: password manager, add when ready
+- Immich: photo management, add when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
-- Flaresolverr: already added to COMPOSE_PROFILES ✓
-- Cleanuparr: add to compose for automated queue cleanup (removes stalled/
-  malicious downloads, triggers re-search). Replaces cleanuparr from upstream repo.
-  Image: ghcr.io/cleanuparr/cleanuparr:latest. Has web UI on port 11011.
-- Maintainerr: add to compose for long-term library management (removes 
-  unwatched content to free disk space). Add when library has significant content.
-  Complements Cleanuparr, not a replacement.
+- Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
+- Cleanuparr: add to compose for automated queue cleanup (removes stalled/malicious
+  downloads, triggers re-search). Image: ghcr.io/cleanuparr/cleanuparr:latest. Has web UI on port 11011.
+- Maintainerr: add to compose for long-term library management (removes unwatched
+  content to free disk space). Add when library has significant content.
 
 ### Configuration
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
   (play content and check Dashboard > Activity)
-- Bazarr: configure sonarr/radarr connections and subtitle providers
+- Bazarr: configured with OpenSubtitles provider, English language profile ✓
 - Seerr: complete initial setup wizard
-- Prowlarr: add indexers and connect to sonarr/radarr/sonarr-anime/radarr-anime
-- Sonarr/Radarr/Sonarr-anime/Radarr-anime: configure root folders, quality profiles,
-  connect to prowlarr and qbittorrent
-- Recyclarr: configure sync after adding to compose
+- Prowlarr: indexers added (1337x, YTS, Nyaa TV, Nyaa Movies), connected to all four arr instances ✓
+- Sonarr/Radarr/Sonarr-anime/Radarr-anime: root folders configured, quality profiles synced
+  via Recyclarr, connected to Prowlarr and qBittorrent ✓
+- Recyclarr: configured and syncing daily ✓
+- Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
 - AdGuard: set up DNS rewrites for local LAN access without Tailscale
 - Homepage: NGE theming - NERV terminal aesthetic, orange/black color scheme,
   themed service names (MAGI System title, Unit-01 for Jellyfin, etc)
-- qBittorrent: change default password from adminadmin
+- qBittorrent: password changed ✓
 
 ### DevOps
 - Set up branch protection rules on master in GitHub
