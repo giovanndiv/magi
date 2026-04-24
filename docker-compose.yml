@@ -38,6 +38,7 @@ services:
       - "traefik.http.routers.wildcard-tls.tls.certresolver=myresolver"
       - "traefik.http.routers.wildcard-tls.tls.domains[0].main=${BASE_HOSTNAME}"
       - "traefik.http.routers.wildcard-tls.tls.domains[0].sans=*.${BASE_HOSTNAME}"
+      - "traefik.http.routers.wildcard-tls.service=api@internal"
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 1m
