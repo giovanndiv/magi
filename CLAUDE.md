@@ -84,9 +84,9 @@ Each subdirectory also has its own `README.md` with service-specific notes.
 
 ### Networking
 
-All containers share the `docker-compose-nas` Docker network. Traefik routes all external traffic via path prefixes (e.g., `/sonarr`, `/radarr`) or dedicated hostnames (e.g., `$SEERR_HOSTNAME`, `$ADGUARD_HOSTNAME`).
+All containers share the `docker-compose-nas` Docker network. Traefik routes all external traffic via subdomain routing — each service gets its own subdomain (e.g., `sonarr.geo-front.net`, `radarr.geo-front.net`). Homepage is served at `magi.geo-front.net`. A wildcard TLS certificate (`*.geo-front.net`) is issued via the Cloudflare DNS challenge so all subdomains share a single cert.
 
-**qBittorrent is special**: it runs on the `vpn` container's network (`network_mode: "service:vpn"`), so it can only reach the internet through the PIA WireGuard VPN. The VPN container must be healthy before qBittorrent starts. Homepage widgets for qBittorrent use `http://vpn:8080` (not `http://qbittorrent:8080`).
+**qBittorrent is special**: it runs on the `vpn` container's network (`network_mode: "service:vpn"`), so it can only reach the internet through the AirVPN WireGuard VPN via Gluetun. The VPN container must be healthy before qBittorrent starts. Homepage widgets for qBittorrent use `http://vpn:8080` (not `http://qbittorrent:8080`).
 
 ### Optional Services via Profiles
 
