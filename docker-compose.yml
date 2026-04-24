@@ -33,8 +33,11 @@ services:
       - host.docker.internal:172.17.0.1
     labels:
       - traefik.enable=true
-      - "traefik.http.routers.traefik.tls.domains[0].main=${BASE_HOSTNAME}"
-      - "traefik.http.routers.traefik.tls.domains[0].sans=*.${BASE_HOSTNAME}"
+      - "traefik.http.routers.wildcard-tls.rule=Host(`${BASE_HOSTNAME}`)"
+      - "traefik.http.routers.wildcard-tls.tls=true"
+      - "traefik.http.routers.wildcard-tls.tls.certresolver=myresolver"
+      - "traefik.http.routers.wildcard-tls.tls.domains[0].main=${BASE_HOSTNAME}"
+      - "traefik.http.routers.wildcard-tls.tls.domains[0].sans=*.${BASE_HOSTNAME}"
     healthcheck:
       test: ["CMD", "traefik", "healthcheck", "--ping"]
       interval: 1m
@@ -503,7 +506,7 @@ services:
     restart: always
     labels:
       - traefik.enable=true
-      - traefik.http.routers.sabnzbd.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/sabnzbd`) || PathPrefix(`/sabnzbd`))
+      - traefik.http.routers.sabnzbd.rule=(Host(`${HOSTNAME}`) && PathPrefix(`/sabnzbd`))
       - traefik.http.routers.sabnzbd.tls=true
       - traefik.http.routers.sabnzbd.tls.certresolver=myresolver
       - traefik.http.services.sabnzbd.loadbalancer.server.port=8080
