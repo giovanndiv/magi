@@ -12,7 +12,7 @@ The NGE theme is intentional and consistent throughout — naming, comments, doc
 |---|---|---|
 | Stack | `magi` | NERV's three supercomputers |
 | Machine hostname | `nerv` | NERV HQ |
-| Domain | `geofront.com` | GeoFront (placeholder) |
+| Domain | `geo-front.net` | GeoFront (placeholder) |
 | Standard user | `shinji` | Shinji Ikari |
 | Admin/root user | `gendo` | Gendo Ikari |
 | Tailscale network | AT-Field | Absolute Terror Field |
@@ -24,7 +24,7 @@ Use "AT-Field" when referring to Tailscale in comments, commit messages, and doc
 - **Host**: HP EliteDesk 800 G4, i7-8700, 16GB RAM, headless Debian
 - **Machine hostname**: `nerv` (prompt: `shinji@nerv:~$`)
 - **Stack name**: `magi`
-- **Domain**: `geofront.com` (placeholder — update `.env` when finalized)
+- **Domain**: `geo-front.net`
 - **Remote access**: Tailscale, referred to as the **AT-Field** in comments and docs (A record points to Tailscale IP `100.x.x.x`; AdGuard Home rewrites to LAN IP for local access)
 - **Users**: `shinji` (standard, runs services), `gendo` (admin/sudo)
 - **Storage**: 2×14TB drives pooled with `mergerfs` + `snapraid` (~28TB usable with parity); mounted at `/mnt/data`
@@ -84,9 +84,9 @@ Each subdirectory also has its own `README.md` with service-specific notes.
 
 ### Networking
 
-All containers share the `docker-compose-nas` Docker network. Traefik routes all external traffic via path prefixes (e.g., `/sonarr`, `/radarr`) or dedicated hostnames (e.g., `$SEERR_HOSTNAME`, `$ADGUARD_HOSTNAME`).
+All containers share the `docker-compose-nas` Docker network. Traefik routes all external traffic via subdomain routing — each service gets its own subdomain (e.g., `sonarr.geo-front.net`, `radarr.geo-front.net`). Homepage is served at `magi.geo-front.net`. A wildcard TLS certificate (`*.geo-front.net`) is issued via the Cloudflare DNS challenge so all subdomains share a single cert.
 
-**qBittorrent is special**: it runs on the `vpn` container's network (`network_mode: "service:vpn"`), so it can only reach the internet through the PIA WireGuard VPN. The VPN container must be healthy before qBittorrent starts. Homepage widgets for qBittorrent use `http://vpn:8080` (not `http://qbittorrent:8080`).
+**qBittorrent is special**: it runs on the `vpn` container's network (`network_mode: "service:vpn"`), so it can only reach the internet through the AirVPN WireGuard VPN via Gluetun. The VPN container must be healthy before qBittorrent starts. Homepage widgets for qBittorrent use `http://vpn:8080` (not `http://qbittorrent:8080`).
 
 ### Optional Services via Profiles
 
@@ -141,7 +141,7 @@ This script automates first-run configuration:
 
 All configuration is in `.env` (copy from `.env.example`). Key variables:
 - `USER_ID` / `GROUP_ID` — should match `shinji`'s UID/GID on the host (`id shinji`)
-- `HOSTNAME=magi.geofront.com` — used for Traefik routing and TLS certs (domain is a placeholder until finalized)
+- `HOSTNAME=magi.geo-front.net` — used for Traefik routing and TLS certs
 - `COMPOSE_FILE` — colon-separated list of compose files to load
 - `COMPOSE_PROFILES` — comma-separated optional profile names to enable
 
@@ -192,7 +192,7 @@ Restart the container after creating the directory if it was already started.
 On first access, AdGuard Home presents a setup wizard:
 1. Complete the wizard (set admin credentials, choose listen interfaces)
 2. After setup, navigate to Filters → DNS blocklists and add desired blocklists
-3. Verify the AdGuard DNS rewrite for `geofront.com` → LAN IP is in place (Filters → DNS rewrites) so local clients resolve to the LAN address instead of the Tailscale/AT-Field IP
+3. After migrating to subdomain routing, the DNS rewrite must be a wildcard entry rather than a single root-domain entry. In Filters → DNS rewrites, add `*.geo-front.net` → LAN IP so that all service subdomains resolve correctly on the local network instead of routing over the AT-Field.
 
 ### 5. Samba — Set gendo's Samba Password
 
