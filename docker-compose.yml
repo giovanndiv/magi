@@ -348,6 +348,10 @@ services:
       - homepage.widget.type=autobrr
       - homepage.widget.url=http://autobrr:7474
       - homepage.widget.key=${AUTOBRR_API_KEY}
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:7474/api/healthz/liveness"]
+      interval: 1m
+      retries: 10
   qbittorrent:
     image: lscr.io/linuxserver/qbittorrent:libtorrentv1
     container_name: qbittorrent
