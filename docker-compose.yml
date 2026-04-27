@@ -346,7 +346,7 @@ services:
       - homepage.description=Torrent download automation
       - homepage.weight=7
       - homepage.widget.type=autobrr
-      - homepage.widget.url=http://autobrr:7474
+      - homepage.widget.url=http://autobrr:7474/
       - homepage.widget.key=${AUTOBRR_API_KEY}
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://127.0.0.1:7474/api/healthz/liveness"]
