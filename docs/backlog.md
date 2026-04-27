@@ -3,6 +3,7 @@
 ## Pending Tasks
 
 ### Infrastructure
+- Add `AUTOBRR_HOSTNAME=autobrr.${BASE_HOSTNAME}` to .env.example when setting up autobrr.
 - Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml
   and adguardhome/docker-compose.yml (still pending)
 - Add recyclarr to docker-compose.yml (image: ghcr.io/recyclarr/recyclarr:8, 
@@ -14,6 +15,14 @@
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 
 ### Services To Add
+- **Autobrr** (HIGH PRIORITY): Already in docker-compose.yml behind profile. Enable with
+  `COMPOSE_PROFILES=autobrr`. IRC announce monitoring for torrent sites, gets into swarms
+  early for faster downloads and better availability.
+  Needs `AUTOBRR_HOSTNAME` added to .env.example and subdomain routing labels added to
+  docker-compose.yml. Port 7474. Subdomain: autobrr.geo-front.net.
+- **Cross-seed** (HIGH PRIORITY): Already in docker-compose.yml behind profile. Enable with
+  `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
+  availability. Set up after autobrr. Needs configuration at `~/magi/cross-seed/config.js`.
 - Vaultwarden: password manager, add when ready
 - Immich: photo management, add when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
@@ -22,19 +31,24 @@
   downloads, triggers re-search). Image: ghcr.io/cleanuparr/cleanuparr:latest. Has web UI on port 11011.
 - Maintainerr: add to compose for long-term library management (removes unwatched
   content to free disk space). Add when library has significant content.
+- Jellyfin anime plugins: Install AniDB and AniList plugins from Jellyfin plugin catalog
+  for accurate anime metadata. Configure in anime library settings after installing.
 
 ### Configuration
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
   (play content and check Dashboard > Activity)
 - Bazarr: configured with OpenSubtitles provider, English language profile ✓
-- Seerr: complete initial setup wizard
+- Seerr: setup wizard complete, connected to Jellyfin, Sonarr, Sonarr-anime, Radarr, Radarr-anime ✓
+- Subdomain routing: all active services migrated from path-prefix to subdomain routing ✓
+- Wildcard TLS cert: configured in Traefik, covers *.geo-front.net ✓
+- AdGuard DNS rewrite: updated to wildcard *.geo-front.net → 192.168.1.201 ✓
 - Prowlarr: indexers added (1337x, YTS, Nyaa TV, Nyaa Movies), connected to all four arr instances ✓
 - Sonarr/Radarr/Sonarr-anime/Radarr-anime: root folders configured, quality profiles synced
   via Recyclarr, connected to Prowlarr and qBittorrent ✓
-- Recyclarr: configured and syncing daily ✓
+- Recyclarr: configured and syncing daily, media naming configured for all four arr instances ✓
 - Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
-- AdGuard: set up DNS rewrites for local LAN access without Tailscale
+- Test download: verified end to end with The Lighthouse ✓
 - Homepage: NGE theming - NERV terminal aesthetic, orange/black color scheme,
   themed service names (MAGI System title, Unit-01 for Jellyfin, etc)
 - qBittorrent: password changed ✓
@@ -75,6 +89,8 @@
   conflicts. shinji is now UID 1002. Containers run as UID 1000 (gendo).
 
 ### Networking
+- **qBittorrent Server domains**: must be set to `*` (wildcard), not the subdomain hostname.
+  The arr apps connect internally via vpn:8080 and will fail if Server domains is restricted.
 - **AirVPN WireGuard session stalling**: VPN may appear connected but traffic stops
   after extended uptime. Workaround: restart vpn container manually with
   `docker restart vpn`. Long term fix: daily cron restart at 4am (see Maintenance).
