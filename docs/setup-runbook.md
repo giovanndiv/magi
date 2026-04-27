@@ -92,6 +92,9 @@ cp .env.example .env
 nano .env
 ```
 
+Routing is subdomain-based — each service gets its own subdomain (e.g. `sonarr.geo-front.net`).
+All service hostname variables are derived from `BASE_HOSTNAME`.
+
 Key .env values to set:
 - `USER_ID=1000`
 - `GROUP_ID=1000`
@@ -101,6 +104,18 @@ Key .env values to set:
 - `DOWNLOAD_ROOT=/mnt/data/torrents`
 - `HOSTNAME=magi.geo-front.net`
 - `BASE_HOSTNAME=geo-front.net`
+- `SONARR_HOSTNAME=sonarr.${BASE_HOSTNAME}`
+- `SONARR_ANIME_HOSTNAME=sonarr-anime.${BASE_HOSTNAME}`
+- `RADARR_HOSTNAME=radarr.${BASE_HOSTNAME}`
+- `RADARR_ANIME_HOSTNAME=radarr-anime.${BASE_HOSTNAME}`
+- `BAZARR_HOSTNAME=bazarr.${BASE_HOSTNAME}`
+- `LIDARR_HOSTNAME=lidarr.${BASE_HOSTNAME}`
+- `PROWLARR_HOSTNAME=prowlarr.${BASE_HOSTNAME}`
+- `QBITTORRENT_HOSTNAME=qbittorrent.${BASE_HOSTNAME}`
+- `JELLYFIN_HOSTNAME=jellyfin.${BASE_HOSTNAME}`
+- `CLEANUPARR_HOSTNAME=cleanuparr.${BASE_HOSTNAME}`
+- `CALIBRE_HOSTNAME=calibre.${BASE_HOSTNAME}`
+- `SUGGESTARR_HOSTNAME=suggestarr.${BASE_HOSTNAME}`
 - `LETS_ENCRYPT_EMAIL=your@email.com`
 - `COMPOSE_FILE=docker-compose.yml:adguardhome/docker-compose.yml:docker-compose.override.yml`
 - `COMPOSE_PROFILES=adguardhome,flaresolverr`
@@ -225,6 +240,29 @@ crontab -e
 # Add: 0 4 * * * docker restart vpn
 ```
 
+### 3.11 Seerr
+- Navigate to `https://seerr.geo-front.net`
+- Complete setup wizard:
+  - Connect Jellyfin using internal URL: `http://jellyfin`, port `8096`, no SSL
+  - Scan libraries
+  - Add Radarr: hostname=`radarr`, port=`7878`, quality profile=`HD Bluray + WEB`,
+    root folder=`/data/media/movies`, external URL=`https://radarr.geo-front.net`
+  - Add Radarr Anime: hostname=`radarr-anime`, port=`7979`, quality profile=`[Anime] Remux-1080p`,
+    root folder=`/data/media/movies`, external URL=`https://radarr-anime.geo-front.net`
+  - Add Sonarr: hostname=`sonarr`, port=`8989`, quality profile=`WEB-1080p`,
+    root folder=`/data/media/tv`, season folders=enabled,
+    external URL=`https://sonarr.geo-front.net`
+  - Add Sonarr Anime: hostname=`sonarr-anime`, port=`8990`, quality profile=`[Anime] Remux-1080p`,
+    root folder=`/data/media/anime`, series type=Anime, season folders=enabled,
+    external URL=`https://sonarr-anime.geo-front.net`
+- Settings > General: copy API key, add to .env as `SEERR_API_KEY`, restart homepage
+- Settings > General: set Application URL to `https://seerr.geo-front.net`
+
+### 3.12 AdGuard DNS Wildcard Rewrite
+- Navigate to AdGuard → Filters → DNS Rewrites
+- Add rewrite: `*.geo-front.net` → `192.168.1.201` (server LAN IP)
+- This ensures all service subdomains resolve to LAN IP for local clients
+
 ## Phase 4: Verification
 
 ### 4.1 VPN Leak Check
@@ -242,3 +280,4 @@ docker exec qbittorrent curl -s ifconfig.me  # should return AirVPN IP
 ### 4.3 QuickSync Verification
 - Play content in Jellyfin that requires transcoding
 - Dashboard > Activity: confirm hardware transcoder is active
+
