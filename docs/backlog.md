@@ -3,27 +3,21 @@
 ## Pending Tasks
 
 ### Infrastructure
-- Add `AUTOBRR_HOSTNAME=autobrr.${BASE_HOSTNAME}` to .env.example when setting up autobrr.
+- AUTOBRR_HOSTNAME: already added to .env.example ✓
+- VAULTWARDEN_HOSTNAME: already added to .env.example ✓
 - Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml
   and adguardhome/docker-compose.yml (still pending)
 - Add recyclarr to docker-compose.yml (image: ghcr.io/recyclarr/recyclarr:8, 
   user 1000:1000, RECYCLARR_CREATE_CONFIG=true)
-- Daily VPN restart cron: add cron job on nerv as gendo:
-  `0 4 * * * docker restart vpn` (prevents AirVPN WireGuard session stalling)
+- Daily VPN restart cron: added via crontab -e as gendo (0 4 * * * docker restart vpn) ✓
 - Set up snapraid alongside mergerfs for parity protection on the 2x14TB drives
 - Get a second SSD for container config storage (current 128GB M.2 is OS + configs)
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 
 ### Services To Add
-- **Autobrr** (HIGH PRIORITY): Already in docker-compose.yml behind profile. Enable with
-  `COMPOSE_PROFILES=autobrr`. IRC announce monitoring for torrent sites, gets into swarms
-  early for faster downloads and better availability.
-  Needs `AUTOBRR_HOSTNAME` added to .env.example and subdomain routing labels added to
-  docker-compose.yml. Port 7474. Subdomain: autobrr.geo-front.net.
-- **Cross-seed** (HIGH PRIORITY): Already in docker-compose.yml behind profile. Enable with
+- **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
   `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
-  availability. Set up after autobrr. Needs configuration at `~/magi/cross-seed/config.js`.
-- Vaultwarden: password manager, add when ready
+  availability. Needs configuration at `~/magi/cross-seed/config.js`.
 - Immich: photo management, add when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
 - Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
@@ -31,8 +25,14 @@
   downloads, triggers re-search). Image: ghcr.io/cleanuparr/cleanuparr:latest. Has web UI on port 11011.
 - Maintainerr: add to compose for long-term library management (removes unwatched
   content to free disk space). Add when library has significant content.
+- Anime autobrr filters: add Anime TV → Sonarr-anime and Anime Movies → Radarr-anime
+  filters in autobrr when ready
 - Jellyfin anime plugins: Install AniDB and AniList plugins from Jellyfin plugin catalog
   for accurate anime metadata. Configure in anime library settings after installing.
+
+#### Done
+- **Autobrr**: deployed, IRC connected, filters configured (Freeleech, TV→Sonarr, Movies→Radarr) ✓
+- **Vaultwarden**: deployed, signups disabled, admin panel enabled, Bitwarden extension connected ✓
 
 ### Configuration
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
@@ -75,6 +75,11 @@
   Add via `crontab -e` as gendo on nerv. Also consider encoding in Ansible.
 
 ## Known Issues & Solutions
+
+### Vaultwarden
+- **Vaultwarden env file**: after creating `~/magi/vaultwarden/.env`, must use
+  `docker compose down vaultwarden && docker compose up -d vaultwarden`
+  (not just restart) for env vars to be picked up by the container
 
 ### Permissions
 - **seerr runs as node:node (UID 1000)** not as the configured USER_ID. 

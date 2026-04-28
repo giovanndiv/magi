@@ -116,6 +116,8 @@ Key .env values to set:
 - `CLEANUPARR_HOSTNAME=cleanuparr.${BASE_HOSTNAME}`
 - `CALIBRE_HOSTNAME=calibre.${BASE_HOSTNAME}`
 - `SUGGESTARR_HOSTNAME=suggestarr.${BASE_HOSTNAME}`
+- `AUTOBRR_HOSTNAME=autobrr.${BASE_HOSTNAME}`
+- `VAULTWARDEN_HOSTNAME=vaultwarden.${BASE_HOSTNAME}`
 - `LETS_ENCRYPT_EMAIL=your@email.com`
 - `COMPOSE_FILE=docker-compose.yml:adguardhome/docker-compose.yml:docker-compose.override.yml`
 - `COMPOSE_PROFILES=adguardhome,flaresolverr`
@@ -169,7 +171,7 @@ grep "_API_KEY" .env  # verify keys populated
 - Manually add to .env: `SEERR_API_KEY` (from Seerr Settings > General)
 
 ### 3.3 qBittorrent
-- Navigate to `https://magi.geo-front.net/qbittorrent`
+- Navigate to `https://qbittorrent.geo-front.net`
 - Tools > Options > Web UI: change default password
 - Tools > Options > Downloads: set default save path to `/data/torrents`
 - Tools > Options > Web UI: enable subnet whitelist for Docker subnet (172.18.0.0/16), enable localhost bypass
@@ -177,7 +179,7 @@ grep "_API_KEY" .env  # verify keys populated
 - Update `QBITTORRENT_PASSWORD` in .env, restart homepage
 
 ### 3.4 Prowlarr
-- Navigate to `https://magi.geo-front.net/prowlarr`
+- Navigate to `https://prowlarr.geo-front.net`
 - Settings > Indexers: Add FlareSolverr proxy (host: `http://flaresolverr:8191`, tag: `flaresolverr`)
 - Settings > Apps: Add Sonarr, Sonarr-anime, Radarr, Radarr-anime (Full Sync)
   - Sonarr: `http://sonarr:8989`, API key from .env, no tags
@@ -214,14 +216,14 @@ docker exec -it recyclarr recyclarr sync
 ```
 
 ### 3.7 Jellyfin
-- Navigate to `https://magi.geo-front.net/jellyfin`
+- Navigate to `https://jellyfin.geo-front.net`
 - Complete setup wizard (create admin account)
 - Dashboard > Playback > Transcoding: set Hardware Acceleration to Intel QuickSync/VAAPI, device `/dev/dri/renderD128`
 - Add libraries: Movies (`/data/media/movies`), TV (`/data/media/tv`), Anime (`/data/media/anime`), Music (`/data/media/music`)
 - Dashboard > API Keys: create key, add to .env as `JELLYFIN_API_KEY`
 
 ### 3.8 Bazarr
-- Navigate to `https://magi.geo-front.net/bazarr`
+- Navigate to `https://bazarr.geo-front.net`
 - Settings > Sonarr: enable, host=`sonarr`, port=`8989`, API key from .env
 - Settings > Radarr: enable, host=`radarr`, port=`7878`, API key from .env
 - Settings > Languages: create English profile with cutoff=English
@@ -229,18 +231,13 @@ docker exec -it recyclarr recyclarr sync
 - Settings > Providers: add OpenSubtitles.com with credentials
 - Settings > Subtitles: enable Automatic Subtitles Synchronization
 
-### 3.9 Seerr
-- Navigate to `https://magi.geo-front.net/seerr`
-- Complete setup wizard: connect to Jellyfin, then Sonarr/Radarr instances
-- Settings > General: copy API key, add to .env as `SEERR_API_KEY`
-
-### 3.10 Daily VPN Restart Cron
+### 3.9 Daily VPN Restart Cron
 ```bash
 crontab -e
 # Add: 0 4 * * * docker restart vpn
 ```
 
-### 3.11 Seerr
+### 3.10 Seerr
 - Navigate to `https://seerr.geo-front.net`
 - Complete setup wizard:
   - Connect Jellyfin using internal URL: `http://jellyfin`, port `8096`, no SSL
@@ -258,10 +255,44 @@ crontab -e
 - Settings > General: copy API key, add to .env as `SEERR_API_KEY`, restart homepage
 - Settings > General: set Application URL to `https://seerr.geo-front.net`
 
-### 3.12 AdGuard DNS Wildcard Rewrite
+### 3.11 AdGuard DNS Wildcard Rewrite
 - Navigate to AdGuard → Filters → DNS Rewrites
 - Add rewrite: `*.geo-front.net` → `192.168.1.201` (server LAN IP)
 - This ensures all service subdomains resolve to LAN IP for local clients
+
+### 3.12 Vaultwarden
+- Add `vaultwarden/docker-compose.yml` to `COMPOSE_FILE` in `.env`
+- Add `VAULTWARDEN_HOSTNAME=vaultwarden.geo-front.net` to `.env`
+- Create `~/magi/vaultwarden/.env` with:
+  ```
+  SIGNUPS_ALLOWED=false
+  ADMIN_TOKEN=$(openssl rand -base64 48)
+  ```
+- Create account at `https://vaultwarden.geo-front.net` BEFORE adding `SIGNUPS_ALLOWED=false`
+- Save ADMIN_TOKEN as secure note in Vaultwarden
+- Access admin panel at `https://vaultwarden.geo-front.net/admin`
+- Install Bitwarden browser extension, set server URL to `https://vaultwarden.geo-front.net`
+- IMPORTANT: Use `docker compose down`/`up` (not restart) for env file changes to take effect
+
+### 3.13 Autobrr
+- Add `AUTOBRR_HOSTNAME=autobrr.geo-front.net` to `.env`
+- `mkdir -p /mnt/data/torrents/ratio-building && chown 1000:1000 /mnt/data/torrents/ratio-building`
+- `docker compose up -d autobrr`
+- Navigate to `https://autobrr.geo-front.net` and create admin account
+- Settings → API Keys: copy key, add to `.env` as `AUTOBRR_API_KEY`
+- `docker compose restart homepage`
+- Settings → Clients: add qBittorrent (host=`vpn`, port=`8080`, username=`admin`, password=qbit password)
+- Settings → Clients: add Sonarr (host=`sonarr`, port=`8989`, no SSL, API key from `.env`)
+- Settings → Clients: add Radarr (host=`radarr`, port=`7878`, no SSL, API key from `.env`)
+- Settings → Clients: add Sonarr-anime (host=`sonarr-anime`, port=`8990`, no SSL, API key from `.env`)
+- Settings → Clients: add Radarr-anime (host=`radarr-anime`, port=`7979`, no SSL, API key from `.env`)
+- Settings → IRC: register IRC nick first using HexChat or similar IRC client
+  - Connect to indexer IRC server, run: `/msg NickServ REGISTER password email`
+  - Close IRC client before saving autobrr IRC config (only one connection per nick allowed)
+- Settings → Indexers: add indexers with RSS credentials from tracker account pages
+- Filters → Create Filter: Freeleech (freeleech=true, indexer=your tracker, action=qBittorrent, category=ratio-building)
+- Filters → Create Filter: TV (indexer=your tracker, action=Sonarr)
+- Filters → Create Filter: Movies (indexer=your tracker, action=Radarr)
 
 ## Phase 4: Verification
 
