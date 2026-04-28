@@ -12,7 +12,7 @@ The NGE theme is intentional and consistent throughout — naming, comments, doc
 |---|---|---|
 | Stack | `magi` | NERV's three supercomputers |
 | Machine hostname | `nerv` | NERV HQ |
-| Domain | `geo-front.net` | GeoFront (placeholder) |
+| Domain | `geo-front.net` | GeoFront |
 | Standard user | `shinji` | Shinji Ikari |
 | Admin/root user | `gendo` | Gendo Ikari |
 | Tailscale network | AT-Field | Absolute Terror Field |
@@ -88,10 +88,32 @@ All containers share the `docker-compose-nas` Docker network. Traefik routes all
 
 **qBittorrent is special**: it runs on the `vpn` container's network (`network_mode: "service:vpn"`), so it can only reach the internet through the AirVPN WireGuard VPN via Gluetun. The VPN container must be healthy before qBittorrent starts. Homepage widgets for qBittorrent use `http://vpn:8080` (not `http://qbittorrent:8080`).
 
+### Active Services
+
+All services accessible via subdomain routing on `geo-front.net`:
+
+| Service | URL | Notes |
+|---|---|---|
+| Homepage | magi.geo-front.net | Main dashboard |
+| Sonarr | sonarr.geo-front.net | TV show management |
+| Sonarr Anime | sonarr-anime.geo-front.net | Anime series management |
+| Radarr | radarr.geo-front.net | Movie management |
+| Radarr Anime | radarr-anime.geo-front.net | Anime movie management |
+| Prowlarr | prowlarr.geo-front.net | Indexer management |
+| qBittorrent | qbittorrent.geo-front.net | Torrent client (via VPN) |
+| Jellyfin | jellyfin.geo-front.net | Media server |
+| Bazarr | bazarr.geo-front.net | Subtitle management |
+| Seerr | seerr.geo-front.net | Media requests |
+| Autobrr | autobrr.geo-front.net | Torrent automation |
+| Vaultwarden | vaultwarden.geo-front.net | Password manager |
+| AdGuard Home | dns.geo-front.net | DNS and ad blocking |
+| Recyclarr | (no UI) | Quality profile sync |
+| Flaresolverr/Byparr | (internal only) | Cloudflare bypass, port 8191 |
+
 ### Optional Services via Profiles
 
 Some services in `docker-compose.yml` require enabling via `COMPOSE_PROFILES`:
-`lidarr`, `sabnzbd`, `flaresolverr`, `calibre-web`, `autobrr`, `suggestarr`, `cross-seed`, `cleanuparr`
+`lidarr`, `sabnzbd`, `flaresolverr`, `calibre-web`, `suggestarr`, `cross-seed`, `cleanuparr`
 
 ### Hardware-Specific Overrides
 
