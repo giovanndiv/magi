@@ -15,6 +15,16 @@
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 
 ### Services To Add
+- **Profilarr** (HIGH PRIORITY): Replacing Recyclarr for quality profile management.
+  Use Profilarr v1 (ghcr.io/dictionarry-hub/profilarr:latest) with Dumpstarr database
+  (https://github.com/Dumpstarr/Database). Has web UI on port 6868. Requires companion
+  profilarr-parser container. Add PROFILARR_HOSTNAME to .env.example.
+  Steps:
+  1. Stop Recyclarr (remove from COMPOSE_FILE in .env on server)
+  2. Add Profilarr + profilarr-parser to docker-compose.yml with subdomain routing
+  3. Connect to Dumpstarr database in Profilarr UI
+  4. Sync profiles to all four arr instances
+  DO NOT run Recyclarr and Profilarr simultaneously — they will conflict.
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
   `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
   availability. Needs configuration at `~/magi/cross-seed/config.js`.
@@ -43,10 +53,10 @@
 - Subdomain routing: all active services migrated from path-prefix to subdomain routing ✓
 - Wildcard TLS cert: configured in Traefik, covers *.geo-front.net ✓
 - AdGuard DNS rewrite: updated to wildcard *.geo-front.net → 192.168.1.201 ✓
-- Prowlarr: indexers added (1337x, YTS, Nyaa TV, Nyaa Movies), connected to all four arr instances ✓
+- Prowlarr: indexers added, connected to all four arr instances ✓
 - Sonarr/Radarr/Sonarr-anime/Radarr-anime: root folders configured, quality profiles synced
   via Recyclarr, connected to Prowlarr and qBittorrent ✓
-- Recyclarr: configured and syncing daily, media naming configured for all four arr instances ✓
+- Recyclarr: being replaced by Profilarr — do not use. Media naming was configured and is still active in arr instances.
 - Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
 - Test download: verified end to end with The Lighthouse ✓
 - Homepage: NGE theming - NERV terminal aesthetic, orange/black color scheme,
@@ -75,6 +85,13 @@
   Add via `crontab -e` as gendo on nerv. Also consider encoding in Ansible.
 
 ## Known Issues & Solutions
+
+### Quality Profile Sync
+- **Recyclarr v8 custom format scoring broken**: Recyclarr v8 removed include templates.
+  The guide-backed profile approach using trash_id does not auto-sync release group tiers
+  (HD Bluray Tier 01/02/03, WEB Tier 01/02/03). Custom format scores for these groups
+  do not apply correctly resulting in +0 scores for many releases in interactive search.
+  Solution: Replace Recyclarr with Profilarr + Dumpstarr database.
 
 ### Vaultwarden
 - **Vaultwarden env file**: after creating `~/magi/vaultwarden/.env`, must use
@@ -211,6 +228,7 @@ git push origin --delete feat/your-feature
 - Repo: `/home/gendo/magi`
 - Media: `/mnt/data/media/{movies,tv,anime,music}`
 - Downloads: `/mnt/data/torrents/{movies,tv,anime}`
+- Ratio building downloads: `/mnt/data/torrents/ratio-building`
 - Drives: `/mnt/disk1` (sda), `/mnt/disk2` (sdb), merged at `/mnt/data`
 - Samba share: `\\<tailscale-ip>\geofront` → `/mnt/data`
 

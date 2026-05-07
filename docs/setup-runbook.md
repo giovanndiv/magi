@@ -137,7 +137,9 @@ sudo mkdir -p /mnt/data/torrents/tv-sonarr
 sudo mkdir -p /mnt/data/torrents/tv-sonarr-anime
 sudo mkdir -p /mnt/data/torrents/radarr
 sudo mkdir -p /mnt/data/torrents/radarr-anime
+sudo mkdir -p /mnt/data/torrents/ratio-building
 sudo chown -R 1000:1000 /mnt/data/
+sudo chown 1000:1000 /mnt/data/torrents/ratio-building
 ```
 
 ### 2.3 Pre-create seerr logs directory
@@ -186,7 +188,7 @@ grep "_API_KEY" .env  # verify keys populated
   - Sonarr-anime: `http://sonarr-anime:8990`, API key from .env, tag: `anime-tv`
   - Radarr: `http://radarr:7878`, API key from .env, no tags
   - Radarr-anime: `http://radarr-anime:7979`, API key from .env, tag: `anime-movie`
-- Add indexers: 1337x, YTS (no flaresolverr tag), Nyaa TV (tag: `anime-tv`), Nyaa Movies (tag: `anime-movie`)
+- Add indexers as needed (tag with `anime-tv` for Sonarr-anime routing, `anime-movie` for Radarr-anime routing)
 
 ### 3.5 Sonarr / Sonarr-anime / Radarr / Radarr-anime
 For each instance:
@@ -200,20 +202,16 @@ For each instance:
   - Radarr: `/data/media/movies`
   - Radarr-anime: `/data/media/movies`
 
-### 3.6 Recyclarr
-```bash
-# Fix permissions
-sudo chown -R 1000:1000 ~/magi/recyclarr/
+### 3.6 Quality Profile Sync (Profilarr)
+NOTE: Recyclarr has been replaced by Profilarr. Do not set up Recyclarr on new installs.
 
-# Create config
-docker exec -it recyclarr recyclarr config create
+Profilarr uses the Dumpstarr database and has a web UI at https://profilarr.geo-front.net.
+See backlog for full Profilarr setup steps.
 
-# Create configs directory and add recyclarr.yml with all four instances
-# See recyclarr/configs/recyclarr.yml on server for current config
-# Create recyclarr/secrets.yml with API keys (never commit)
-
-docker exec -it recyclarr recyclarr sync
-```
+Media naming is handled directly in each arr instance Settings → Media Management:
+- Sonarr/Sonarr-anime: jellyfin-tvdb series folder format
+- Radarr: jellyfin-tmdb movie folder format
+- Radarr-anime: jellyfin-anime-tmdb movie folder format
 
 ### 3.7 Jellyfin
 - Navigate to `https://jellyfin.geo-front.net`
@@ -286,13 +284,9 @@ crontab -e
 - Settings → Clients: add Radarr (host=`radarr`, port=`7878`, no SSL, API key from `.env`)
 - Settings → Clients: add Sonarr-anime (host=`sonarr-anime`, port=`8990`, no SSL, API key from `.env`)
 - Settings → Clients: add Radarr-anime (host=`radarr-anime`, port=`7979`, no SSL, API key from `.env`)
-- Settings → IRC: register IRC nick first using HexChat or similar IRC client
-  - Connect to indexer IRC server, run: `/msg NickServ REGISTER password email`
-  - Close IRC client before saving autobrr IRC config (only one connection per nick allowed)
-- Settings → Indexers: add indexers with RSS credentials from tracker account pages
-- Filters → Create Filter: Freeleech (freeleech=true, indexer=your tracker, action=qBittorrent, category=ratio-building)
-- Filters → Create Filter: TV (indexer=your tracker, action=Sonarr)
-- Filters → Create Filter: Movies (indexer=your tracker, action=Radarr)
+- Settings → IRC: configure IRC networks as needed for your indexers
+- Settings → Indexers: add indexers as needed
+- Filters → Create filters to route grabs to the appropriate arr instance or qBittorrent category
 
 ## Phase 4: Verification
 
