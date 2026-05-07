@@ -19,6 +19,64 @@ The NGE theme is intentional and consistent throughout — naming, comments, doc
 
 Use "AT-Field" when referring to Tailscale in comments, commit messages, and documentation.
 
+## Working Style & Preferences
+
+**Before writing any Docker Compose service, configuration, or CLI commands:**
+- Always consult official documentation first. Do not guess at syntax, image names, environment variables, or CLI flags.
+- For Recyclarr: https://recyclarr.dev
+- For Docker Compose services: check the official image documentation on Docker Hub or the project's GitHub
+- For CLI tools: run --help or check official docs before suggesting commands
+- If unsure about a command's syntax, say so explicitly rather than guessing
+
+**Git workflow — two patterns depending on importance:**
+
+For important changes (compose changes, config changes, anything that affects running services):
+```bash
+git add . && git commit -m "your message" && git push origin branch-name && gh pr create --base master --head branch-name --title "your title" && gh pr comment --body "@claude review"
+```
+Wait for Claude Code review to complete, address any issues, then merge:
+```bash
+gh pr merge --merge && git checkout master && git pull origin master && git branch -d branch-name && git push origin --delete branch-name
+```
+Then on server: `cd ~/magi && git pull origin master`
+
+For unimportant changes (docs only, minor fixes):
+```bash
+git add . && git commit -m "your message" && git push origin branch-name && gh pr create --base master --head branch-name --title "your title" && gh pr merge --merge && git checkout master && git pull origin master && git branch -d branch-name && git push origin --delete branch-name
+```
+Then on server: `cd ~/magi && git pull origin master`
+
+**Always use `gh pr create --base master --head branch-name`** — never use the GitHub web UI for PRs as it defaults to the upstream repo base.
+
+**When you need file contents from the user**, provide the exact command to get them. Examples:
+- Need CLAUDE.md: `cat ~/magi/CLAUDE.md | clip.exe`
+- Need docker-compose.yml: `cat ~/magi/docker-compose.yml | clip.exe`
+- Need git diff: `git diff | clip.exe`
+- Need recyclarr config: `cat ~/magi/recyclarr/configs/recyclarr.yml | clip.exe`
+Never assume file contents — always ask and provide the command.
+
+**When showing compose or config changes:** always show the complete updated block, not just the diff or a description of what changed.
+
+**When something isn't working:** look up the official docs or error message before suggesting fixes. Acknowledge uncertainty explicitly rather than guessing. Never let the user run a command you are not confident about.
+
+**Communication:**
+- When wrong or guessing, say so immediately
+- Do not repeat yourself — if the user confirms something is done, move on
+- Do not over-explain decisions the user has already made
+- When the user implies they want speed, skip hand-holding
+- Give clear recommendations when asked "should I do X or Y" — not "it depends"
+- Don't suggest backlog items as new ideas
+
+**Session management:**
+- At the end of every session, remind the user to update docs/backlog/CLAUDE.md and offer to generate the update prompt
+- Summarize what was completed and what is still pending at wrap-up
+- When the conversation becomes long and slow to respond, proactively suggest starting a new session and provide the cat commands needed to bring the new session up to speed
+
+**Config and file changes:**
+- When editing recyclarr.yml, docker-compose.yml, or any config file, always ask for the current contents first before generating changes
+- Never generate a partial config — always show the complete file or block
+- When switching tools (e.g. Recyclarr → Profilarr), clearly state upfront what needs to be cleaned up from the old tool before setting up the new one
+
 ## Deployment Context
 
 - **Host**: HP EliteDesk 800 G4, i7-8700, 16GB RAM, headless Debian
@@ -107,7 +165,7 @@ All services accessible via subdomain routing on `geo-front.net`:
 | Autobrr | autobrr.geo-front.net | Torrent automation |
 | Vaultwarden | vaultwarden.geo-front.net | Password manager |
 | AdGuard Home | dns.geo-front.net | DNS and ad blocking |
-| Recyclarr | (no UI) | Quality profile sync |
+| Profilarr | profilarr.geo-front.net | Quality profile management (replacing Recyclarr) |
 | Flaresolverr/Byparr | (internal only) | Cloudflare bypass, port 8191 |
 
 ### Optional Services via Profiles
@@ -155,7 +213,7 @@ Services expose themselves to Homepage via Docker labels (`homepage.group`, `hom
 
 This script automates first-run configuration:
 1. Reads API keys from each *arr app's `config.xml` and writes them to `.env`
-2. Sets the URL base in each *arr app's `config.xml`
+2. Clears the URL base in each *arr app's `config.xml` (originally SET URL bases; updated after migrating to subdomain routing to CLEAR them instead — do not re-add URL base setting logic)
 3. Sets qBittorrent's WebUI password to `adminadmin`
 4. Restarts affected containers
 
