@@ -452,6 +452,7 @@ services:
   recyclarr:
     image: ghcr.io/recyclarr/recyclarr:8
     container_name: recyclarr
+    profiles: [recyclarr]
     user: 1000:1000
     volumes:
       - ${CONFIG_ROOT:-.}/recyclarr:/config
@@ -459,6 +460,35 @@ services:
       - TZ=${TIMEZONE}
       - CRON_SCHEDULE=@daily
     restart: unless-stopped
+  profilarr:
+    image: santiagosayshey/profilarr:latest
+    container_name: profilarr
+    restart: always
+    environment:
+      - PUID=${USER_ID}
+      - PGID=${GROUP_ID}
+      - UMASK=022
+      - TZ=${TIMEZONE}
+    volumes:
+      - ${CONFIG_ROOT:-.}/profilarr:/config
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://127.0.0.1:6868"]
+      interval: 1m
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.profilarr.rule=Host(`${PROFILARR_HOSTNAME}`)
+      - traefik.http.routers.profilarr.tls=true
+      - traefik.http.routers.profilarr.tls.certresolver=myresolver
+      - traefik.http.services.profilarr.loadbalancer.server.port=6868
+      - homepage.group=Download
+      - homepage.name=Profilarr
+      - homepage.icon=profilarr.png
+      - homepage.href=https://${PROFILARR_HOSTNAME}
+      - homepage.description=Quality profile management
+      - homepage.weight=6
   cleanuparr:
     image: ghcr.io/cleanuparr/cleanuparr:latest
     container_name: cleanuparr
