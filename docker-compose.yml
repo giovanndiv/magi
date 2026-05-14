@@ -647,8 +647,9 @@ services:
     restart: always
     environment:
       - WATCHTOWER_CLEANUP=true
-      - WATCHTOWER_DEBUG=true
       - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_SCHEDULE=0 0 3 * * *
+      - TZ=${TIMEZONE}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
   autoheal:
