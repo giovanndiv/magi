@@ -6,7 +6,7 @@
 - AUTOBRR_HOSTNAME: already added to .env.example ✓
 - VAULTWARDEN_HOSTNAME: already added to .env.example ✓
 - Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml
-  and adguardhome/docker-compose.yml ✓
+  and adguardhome/docker-compose.yml — done ✔
 - Add recyclarr to docker-compose.yml (image: ghcr.io/recyclarr/recyclarr:8, 
   user 1000:1000, RECYCLARR_CREATE_CONFIG=true)
 - Daily VPN restart cron: added via crontab -e as gendo (0 4 * * * docker restart vpn) ✓
@@ -51,6 +51,9 @@
   via Recyclarr, connected to Prowlarr and qBittorrent ✓
 - Recyclarr: being replaced by Profilarr — do not use. Media naming was configured and is still active in arr instances.
 - Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
+- Watchtower: configured with WATCHTOWER_SCHEDULE=0 0 3 * * * (3am daily), TZ, and WATCHTOWER_CLEANUP. Debug mode removed. Automated image updates active.
+- Byparr: removed broken compose healthcheck (curl not in image). Byparr has a built-in healthcheck at /health — no override needed.
+- Watchtower scheduling and unattended-upgrades for apt: add to backlog as future automation items.
 - Test download: verified end to end with The Lighthouse ✓
 - Homepage: NGE theming - NERV terminal aesthetic, orange/black color scheme,
   themed service names (MAGI System title, Unit-01 for Jellyfin, etc)
@@ -129,6 +132,15 @@
 - **COMPOSE_FILE must explicitly include docker-compose.override.yml** — Docker does
   not auto-load the override file when COMPOSE_FILE is set in .env. Always include:
   `COMPOSE_FILE=docker-compose.yml:adguardhome/docker-compose.yml:docker-compose.override.yml`
+
+### Healthchecks
+- Always use wget not curl. Curl is frequently absent from minimal images. Always include timeout and start_period. If the image has a built-in healthcheck (e.g. byparr), remove the compose override entirely rather than duplicating it.
+
+### Watchtower debug mode overrides schedule
+- WATCHTOWER_DEBUG=true causes watchtower to poll continuously and ignore WATCHTOWER_SCHEDULE. Always remove debug mode in production.
+
+### GitHub Claude bot polling
+- The bot edits its comment in place as it works. Do not poll based on comment count. Poll based on comment body containing "Claude finished" which signals the review is complete.
 
 ### Git / GitHub
 - **Fork always defaults to upstream base on PR creation** — always use gh CLI:

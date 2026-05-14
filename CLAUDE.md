@@ -34,11 +34,20 @@ For important changes (compose changes, config changes, anything that affects ru
 ```bash
 git add . && git commit -m "your message" && git push origin branch-name && gh pr create --base master --head branch-name --title "your title" && gh pr comment --body "@claude review"
 ```
-After creating the PR, poll for the automated review comment every 30 seconds:
-```bash
-while true; do gh pr view --comments; sleep 30; done
-```
-Once a review comment appears, stop polling, read it, summarize the issues, and ask the user which ones to fix before doing anything. Address any issues, force push, then merge:
+After creating the PR, poll until the GitHub Claude bot finishes its review:
+
+while true; do
+  COMMENT=$(gh pr view <PR_NUMBER> --json comments --jq '.comments[-1].body')
+  if echo "$COMMENT" | grep -q "Claude finished"; then
+    echo "Review complete:"
+    echo "$COMMENT"
+    echo "--- Stopping. ---"
+    break
+  fi
+  sleep 30
+done
+
+After the loop breaks, stop completely. Print the review comment, list each issue as a numbered item, and wait for the user to tell you which ones to fix before doing anything. Address any issues, force push, then merge:
 ```bash
 gh pr merge --merge && git checkout master && git pull origin master && git branch -d branch-name && git push origin --delete branch-name
 ```
@@ -86,6 +95,8 @@ Never assume file contents — always ask and provide the command.
 - When editing recyclarr.yml, docker-compose.yml, or any config file, always ask for the current contents first before generating changes
 - Never generate a partial config — always show the complete file or block
 - When switching tools (e.g. Recyclarr → Profilarr), clearly state upfront what needs to be cleaned up from the old tool before setting up the new one
+
+**Claude Code prompt format**: write all prompts as plain text with no markdown code fences (no triple backticks). Yaml and bash blocks go inline with plain indentation. No nested formatting.
 
 ## Deployment Context
 
