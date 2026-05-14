@@ -34,7 +34,11 @@ For important changes (compose changes, config changes, anything that affects ru
 ```bash
 git add . && git commit -m "your message" && git push origin branch-name && gh pr create --base master --head branch-name --title "your title" && gh pr comment --body "@claude review"
 ```
-Wait for Claude Code review to complete, address any issues, then merge:
+After creating the PR, poll for the automated review comment every 30 seconds:
+```bash
+while true; do gh pr view --comments; sleep 30; done
+```
+Once a review comment appears, stop polling, read it, summarize the issues, and ask the user which ones to fix before doing anything. Address any issues, force push, then merge:
 ```bash
 gh pr merge --merge && git checkout master && git pull origin master && git branch -d branch-name && git push origin --delete branch-name
 ```
@@ -45,6 +49,12 @@ For unimportant changes (docs only, minor fixes):
 git add . && git commit -m "your message" && git push origin branch-name && gh pr create --base master --head branch-name --title "your title" && gh pr merge --merge && git checkout master && git pull origin master && git branch -d branch-name && git push origin --delete branch-name
 ```
 Then on server: `cd ~/magi && git pull origin master`
+
+**Architect/developer split**: Claude Chat acts as architect and decision-maker. Claude Code is the executor. When Claude Chat generates a prompt for Claude Code, always include: read CLAUDE.md first, exact changes to make, which git workflow to use, branch name, and PR title.
+
+**Healthchecks**: Always use wget instead of curl — curl is often not available in minimal images. Always include timeout and start_period. Check cleanuparr as the reference pattern.
+
+**Env vars and container labels**: After adding a new variable to .env on the server, any container using that variable in labels needs --force-recreate, not just restart. If compose config fails with a missing file error, fix the missing file first — it breaks variable resolution globally.
 
 **Always use `gh pr create --base master --head branch-name`** — never use the GitHub web UI for PRs as it defaults to the upstream repo base.
 

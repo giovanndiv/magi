@@ -15,16 +15,6 @@
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 
 ### Services To Add
-- **Profilarr** (HIGH PRIORITY): Replacing Recyclarr for quality profile management.
-  Use Profilarr v1 (ghcr.io/dictionarry-hub/profilarr:latest) with Dumpstarr database
-  (https://github.com/Dumpstarr/Database). Has web UI on port 6868. Requires companion
-  profilarr-parser container. Add PROFILARR_HOSTNAME to .env.example.
-  Steps:
-  1. Stop Recyclarr (remove from COMPOSE_FILE in .env on server)
-  2. Add Profilarr + profilarr-parser to docker-compose.yml with subdomain routing
-  3. Connect to Dumpstarr database in Profilarr UI
-  4. Sync profiles to all four arr instances
-  DO NOT run Recyclarr and Profilarr simultaneously — they will conflict.
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
   `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
   availability. Needs configuration at `~/magi/cross-seed/config.js`.
@@ -43,8 +33,11 @@
 #### Done
 - **Autobrr**: deployed, IRC connected, filters configured (Freeleech, TV→Sonarr, Movies→Radarr) ✓
 - **Vaultwarden**: deployed, signups disabled, admin panel enabled, Bitwarden extension connected ✓
+- **Profilarr**: deployed, Dumpstarr database linked, all four arr instances connected, profiles synced ✔
 
 ### Configuration
+- Vaultwarden backup: configure rclone-backup service with a cloud destination (S3, Google Drive, etc.) and populate ~/magi/vaultwarden/backup.env with rclone credentials. Deferred until Vaultwarden is in active use.
+- Sonarr Anime: when adding series, always set Series Type to Anime (not Standard). Also set default Series Type to Anime in Seerr → Settings → Sonarr Anime instance.
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
   (play content and check Dashboard > Activity)
@@ -85,6 +78,16 @@
   Add via `crontab -e` as gendo on nerv. Also consider encoding in Ansible.
 
 ## Known Issues & Solutions
+
+### Vaultwarden backup.env
+- vaultwarden/docker-compose.yml references vaultwarden/backup.env for the rclone-backup service. This file must exist or docker compose config fails entirely, breaking variable resolution for ALL services (symptoms: labels missing from containers, env vars not interpolating). Fix: `touch ~/magi/vaultwarden/backup.env`. Add this to fresh install steps.
+
+### Sonarr Anime series type
+- When adding anime series, Series Type must be set to Anime (not Standard). Standard uses S01E01 format which Nyaa doesn't index — Anime type uses absolute episode numbering. Set default in Seerr → Settings → Sonarr Anime to avoid fixing this per-series.
+
+### Nyaa indexer settings (Prowlarr)
+- Anime TV Nyaa indexer: enable "Improve Sonarr compatibility" and "Remove first season keywords"
+- Anime Movies Nyaa indexer: enable "Improve Radarr compatibility"
 
 ### Quality Profile Sync
 - **Recyclarr v8 custom format scoring broken**: Recyclarr v8 removed include templates.
@@ -133,6 +136,7 @@
 - **GitHub Actions comment-triggered workflows only run from master** — workflows
   on feature branches won't trigger on PR comments until merged to master.
 ### Server Setup
+- **vaultwarden/backup.env must exist**: touch ~/magi/vaultwarden/backup.env before bringing stack up, or compose variable resolution breaks globally.
 - **sudo not installed on fresh Debian** — must su to root first and install:
   `su - && apt install curl sudo git htop ufw -y && usermod -aG sudo gendo`
 - **Node.js via apt is outdated** — always install via nvm:
