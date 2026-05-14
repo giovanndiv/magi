@@ -6,7 +6,7 @@
 - AUTOBRR_HOSTNAME: already added to .env.example ✓
 - VAULTWARDEN_HOSTNAME: already added to .env.example ✓
 - Rename docker network from `docker-compose-nas` to `nerv` in docker-compose.yml
-  and adguardhome/docker-compose.yml (still pending)
+  and adguardhome/docker-compose.yml ✓
 - Add recyclarr to docker-compose.yml (image: ghcr.io/recyclarr/recyclarr:8, 
   user 1000:1000, RECYCLARR_CREATE_CONFIG=true)
 - Daily VPN restart cron: added via crontab -e as gendo (0 4 * * * docker restart vpn) ✓
@@ -226,7 +226,7 @@ git push origin --delete feat/your-feature
 - Admin user: `gendo` (UID 1000) — owns Docker, containers, config files
 - Domain: `geo-front.net` (Cloudflare)
 - Tailscale network: AT-Field
-- Docker network: `docker-compose-nas` (pending rename to `nerv`)
+- Docker network: `nerv`
 
 ### Key Paths
 - Repo: `/home/gendo/magi`

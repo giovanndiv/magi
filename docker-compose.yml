@@ -662,4 +662,4 @@ services:
 
 networks:
   default:
-    name: docker-compose-nas
+    name: nerv
