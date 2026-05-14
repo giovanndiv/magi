@@ -43,7 +43,7 @@ services:
       - ./adguardhome/certs:/opt/adguardhome/certs
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=docker-compose-nas"
+      - "traefik.docker.network=nerv"
       - "traefik.http.services.adguardhome.loadbalancer.server.port=3000"
       - "traefik.http.routers.adguardhome.rule=(Host(`${ADGUARD_HOSTNAME}`))"
       - "traefik.http.routers.adguardhome.tls=true"

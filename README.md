@@ -394,8 +394,8 @@ Set the `ADGUARD_HOSTNAME`, I chose a different subdomain to use secure DNS with
 
 On first run, specify the port 3000 and enable listen on all interfaces to make it work with Tailscale.
 
-If after running `docker compose up -d`, you're getting `network docker-compose-nas declared as external, but could not be found`,
-run `docker network create docker-compose-nas` first.
+If after running `docker compose up -d`, you're getting `network nerv declared as external, but could not be found`,
+run `docker network create nerv` first.
 
 #### Encryption
 
