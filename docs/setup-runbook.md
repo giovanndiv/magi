@@ -259,6 +259,8 @@ crontab -e
 - This ensures all service subdomains resolve to LAN IP for local clients
 
 ### 3.12 Vaultwarden
+- Pre-create backup.env: `touch ~/magi/vaultwarden/backup.env`
+  (Required — without this file, docker compose config fails and breaks variable resolution for all services)
 - Add `vaultwarden/docker-compose.yml` to `COMPOSE_FILE` in `.env`
 - Add `VAULTWARDEN_HOSTNAME=vaultwarden.geo-front.net` to `.env`
 - Create `~/magi/vaultwarden/.env` with:
