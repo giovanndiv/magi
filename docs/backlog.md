@@ -15,6 +15,8 @@
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
 - Autobrr IRC announce: configure DC and SP IRC announce in autobrr Settings → IRC. Then create filters routing TV/anime/movies to correct arr instances.
 - qBittorrent seeding rules: verify minimum seed time and ratio are set correctly for each private tracker category to avoid HnR violations on DC (5 days / 1.0) and SP (10 days / 1.0).
+- LVM restructure: reformat both 14TB drives as a single LVM logical volume for true 28TB single filesystem. Required for native hardlink support without workarounds. Schedule during maintenance window when no active seeding obligations. Process: back up media, wipe drives, create LVM volume, restore media, git clone stack, docker compose up. Current workaround (media moved to disk2) provides hardlinks within 14TB cap.
+- Replace copies with hardlinks: run `hardlink -v /mnt/data/torrents /mnt/data/media` to convert existing duplicate files to hardlinks. Already run on May 20 2026 for existing library. Re-run after any bulk imports.
 
 ### Services To Add
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
@@ -92,6 +94,12 @@
   Add via `crontab -e` as gendo on nerv. Also consider encoding in Ansible.
 
 ## Known Issues & Solutions
+
+### Hardlinks not working with mergerfs across drives
+mergerfs cannot create hardlinks across two different physical drives. Symptoms: `Cross-device link error` when running `ln` between `/mnt/data/torrents` and `/mnt/data/media`. Root cause: media was on disk1 and torrents on disk2. Fix applied May 20: moved media to disk2 so both torrents and media are on same physical drive. Hardlinks now work through mergerfs mount. Long term fix: reformat as LVM.
+
+### Hardlink setup
+For hardlinks to work, both the download client and arr apps must share the same filesystem. The TRaSH guide recommends qBittorrent mount as `/data/torrents` and arr apps as `/data`. This works only if torrents and media are on the same underlying physical drive. The upstream compose (`${DOWNLOAD_ROOT}:/data/torrents`) is correct per TRaSH — the issue was drive layout not volume mounts.
 
 ### Vaultwarden backup.env
 - vaultwarden/docker-compose.yml references vaultwarden/backup.env for the rclone-backup service. This file must exist or docker compose config fails entirely, breaking variable resolution for ALL services (symptoms: labels missing from containers, env vars not interpolating). Fix: `touch ~/magi/vaultwarden/backup.env`. Add this to fresh install steps.

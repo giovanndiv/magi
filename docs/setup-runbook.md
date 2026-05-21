@@ -36,6 +36,9 @@ sudo ufw enable
 ```
 
 ### 1.5 Drive Setup
+
+IMPORTANT: For hardlinks to work, torrents and media must be on the same physical drive. Either use LVM to combine drives into one logical volume before formatting, or ensure mergerfs create policy keeps related files on the same drive. The current setup uses mergerfs with media and torrents both on disk2. disk1 is available for overflow. If reformatting from scratch, prefer LVM over mergerfs for a cleaner hardlink-compatible setup.
+
 ```bash
 # Format drives if needed
 sudo mkfs.ext4 /dev/sda
