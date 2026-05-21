@@ -125,7 +125,7 @@ Key .env values to set:
 - `AIRVPN_PRESHARED_KEY=` (from AirVPN config generator)
 - `AIRVPN_ADDRESSES=` (IPv4 only from AirVPN config, e.g. 10.x.x.x/32)
 - `AIRVPN_COUNTRY=United States`
-- `AIRVPN_PORT=7123` (forwarded port from AirVPN client area)
+- `AIRVPN_PORT=<airvpn-forwarded-port>` (forwarded port from AirVPN client area)
 
 ### 2.2 Create Required Directories
 ```bash
@@ -177,7 +177,7 @@ grep "_API_KEY" .env  # verify keys populated
 - Tools > Options > Web UI: change default password
 - Tools > Options > Downloads: set default save path to `/data/torrents`
 - Tools > Options > Web UI: enable subnet whitelist for Docker subnet (172.18.0.0/16), enable localhost bypass
-- Tools > Options > Connection: set listening port to 7123 (AirVPN forwarded port)
+- Tools > Options > Connection: set listening port to <airvpn-forwarded-port> (AirVPN forwarded port)
 - Update `QBITTORRENT_PASSWORD` in .env, restart homepage
 
 ### 3.4 Prowlarr
@@ -255,7 +255,7 @@ crontab -e
 
 ### 3.11 AdGuard DNS Wildcard Rewrite
 - Navigate to AdGuard → Filters → DNS Rewrites
-- Add rewrite: `*.geo-front.net` → `192.168.1.201` (server LAN IP)
+- Add rewrite: `*.geo-front.net` → `<server-lan-ip>` (server LAN IP)
 - This ensures all service subdomains resolve to LAN IP for local clients
 
 ### 3.12 Vaultwarden

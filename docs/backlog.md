@@ -13,8 +13,8 @@
 - Set up snapraid alongside mergerfs for parity protection on the 2x14TB drives
 - Get a second SSD for container config storage (current 128GB M.2 is OS + configs)
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
-- Autobrr IRC announce: configure Seedpool IRC (irc.seedpool.org:6697) and DigitalCore IRC (irc.digitalcore.club:7000, requires /msg ENDOR !invite) in autobrr Settings → IRC. Then create filters routing TV/anime/movies to correct arr instances.
-- qBittorrent seeding rules: verify minimum seed time and ratio are set correctly for each private tracker category to avoid HnR violations on DigitalCore (5 days / 1.0) and Seedpool (10 days / 1.0).
+- Autobrr IRC announce: configure DC and SP IRC announce in autobrr Settings → IRC. Then create filters routing TV/anime/movies to correct arr instances.
+- qBittorrent seeding rules: verify minimum seed time and ratio are set correctly for each private tracker category to avoid HnR violations on DC (5 days / 1.0) and SP (10 days / 1.0).
 
 ### Services To Add
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
@@ -39,9 +39,9 @@
 
 ### Configuration
 - Vaultwarden backup: configured rclone-backup with Google Drive (RcloneBackup remote), daily 2am cron, 30 day retention, zip encrypted. Backup verified working. ✔
-- DigitalCore: added to Prowlarr with general tag, seed ratio 1.0, seed time 7200 minutes. IRC announce setup pending in autobrr.
-- Seedpool: added to Prowlarr with general tag, seed ratio 1.0, seed time 14400 minutes. IRC announce setup pending in autobrr.
-- Autobrr filters for Seedpool and DigitalCore: pending — need IRC announce configured and filters created for TV, anime, movies routing
+- DC: added to Prowlarr with general tag, seed ratio 1.0, seed time 7200 minutes. IRC announce setup pending in autobrr.
+- SP: added to Prowlarr with general tag, seed ratio 1.0, seed time 14400 minutes. IRC announce setup pending in autobrr.
+- Autobrr filters for SP and DC: pending — need IRC announce configured and filters created for TV, anime, movies routing
 - Profilarr v2 migration: pending — v2 released May 2026, not compatible with v1. Wait for stability before migrating. New image will be ghcr.io/dictionarry-hub/profilarr:latest
 - Gluetun control server auth: pending — Gluetun will require auth on /v1/vpn/status in v3.40. Configure before upgrading.
 - Quality Definitions: set min/max values from TRaSH Guides in all four arr instances. One-time manual setup.
@@ -56,7 +56,7 @@
 - Seerr: setup wizard complete, connected to Jellyfin, Sonarr, Sonarr-anime, Radarr, Radarr-anime ✓
 - Subdomain routing: all active services migrated from path-prefix to subdomain routing ✓
 - Wildcard TLS cert: configured in Traefik, covers *.geo-front.net ✓
-- AdGuard DNS rewrite: updated to wildcard *.geo-front.net → 192.168.1.201 ✓
+- AdGuard DNS rewrite: updated to wildcard *.geo-front.net → <server-lan-ip> ✓
 - Prowlarr: indexers added, connected to all four arr instances ✓
 - Sonarr/Radarr/Sonarr-anime/Radarr-anime: root folders configured, quality profiles synced
   via Recyclarr, connected to Prowlarr and qBittorrent ✓
