@@ -274,6 +274,15 @@ crontab -e
 - Install Bitwarden browser extension, set server URL to `https://vaultwarden.geo-front.net`
 - IMPORTANT: Use `docker compose down`/`up` (not restart) for env file changes to take effect
 
+**Vaultwarden backup setup:**
+- Create rclone config directory: `mkdir -p ~/magi/vaultwarden/backup/rclone`
+- Fix ownership: `sudo chown -R 1000:1000 ~/magi/vaultwarden/backup`
+- Configure rclone on local machine, copy rclone.conf to `~/magi/vaultwarden/backup/rclone/rclone.conf` on server
+- Remote name must be `RcloneBackup`
+- Populate `~/magi/vaultwarden/backup.env` with `RCLONE_REMOTE_NAME`, `RCLONE_REMOTE_DIR`, `CRON`, `ZIP_PASSWORD`, `BACKUP_KEEP_DAYS`, `TIMEZONE`
+- Start container: `docker compose up -d vaultwarden-backup`
+- Test: `docker exec vaultwarden-backup /app/backup.sh`
+
 ### 3.13 Autobrr
 - Add `AUTOBRR_HOSTNAME=autobrr.geo-front.net` to `.env`
 - `mkdir -p /mnt/data/torrents/ratio-building && chown 1000:1000 /mnt/data/torrents/ratio-building`
