@@ -13,6 +13,8 @@
 - Set up snapraid alongside mergerfs for parity protection on the 2x14TB drives
 - Get a second SSD for container config storage (current 128GB M.2 is OS + configs)
 - Consider upgrading RAM from 16GB if running LLM (Ollama) in future
+- Autobrr IRC announce: configure Seedpool IRC (irc.seedpool.org:6697) and DigitalCore IRC (irc.digitalcore.club:7000, requires /msg ENDOR !invite) in autobrr Settings → IRC. Then create filters routing TV/anime/movies to correct arr instances.
+- qBittorrent seeding rules: verify minimum seed time and ratio are set correctly for each private tracker category to avoid HnR violations on DigitalCore (5 days / 1.0) and Seedpool (10 days / 1.0).
 
 ### Services To Add
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
@@ -36,7 +38,16 @@
 - **Profilarr**: deployed, Dumpstarr database linked, all four arr instances connected, profiles synced ✔
 
 ### Configuration
-- Vaultwarden backup: configure rclone-backup service with a cloud destination (S3, Google Drive, etc.) and populate ~/magi/vaultwarden/backup.env with rclone credentials. Deferred until Vaultwarden is in active use.
+- Vaultwarden backup: configured rclone-backup with Google Drive (RcloneBackup remote), daily 2am cron, 30 day retention, zip encrypted. Backup verified working. ✔
+- DigitalCore: added to Prowlarr with general tag, seed ratio 1.0, seed time 7200 minutes. IRC announce setup pending in autobrr.
+- Seedpool: added to Prowlarr with general tag, seed ratio 1.0, seed time 14400 minutes. IRC announce setup pending in autobrr.
+- Autobrr filters for Seedpool and DigitalCore: pending — need IRC announce configured and filters created for TV, anime, movies routing
+- Profilarr v2 migration: pending — v2 released May 2026, not compatible with v1. Wait for stability before migrating. New image will be ghcr.io/dictionarry-hub/profilarr:latest
+- Gluetun control server auth: pending — Gluetun will require auth on /v1/vpn/status in v3.40. Configure before upgrading.
+- Quality Definitions: set min/max values from TRaSH Guides in all four arr instances. One-time manual setup.
+- Radarr upgrade cutoff: set Upgrades Allowed cutoff in Movies 1080p profile to prevent unwanted upgrades affecting private tracker ratios.
+- Unpackerr: add Sonarr Anime and Radarr Anime instances to docker-compose.yml environment variables.
+- Bazarr: fixed — was using opensubtitles.org credentials instead of opensubtitles.com. Account created on .com, authentication now working.
 - Sonarr Anime: when adding series, always set Series Type to Anime (not Standard). Also set default Series Type to Anime in Seerr → Settings → Sonarr Anime instance.
 - Jellyfin: configure AniDB/AniList metadata plugins when anime content added
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
@@ -158,6 +169,18 @@
   when needing to change gendo's UID/session while logged in as gendo.
 - **Tailscale blocks local IP SSH after ufw enabled** — this is intentional.
   Only connect via Tailscale IP (100.x.x.x) after setup.
+
+### Vaultwarden-backup crash loop
+The rclone-backup container will crash loop at startup if backup.env exists but rclone config is missing or empty. Crash loop at 9000+ restarts was causing Docker daemon instability affecting other containers. Fix: configure rclone properly with a valid remote before starting the container. The rclone config must be at ~/magi/vaultwarden/backup/rclone/rclone.conf and backup.env must have RCLONE_REMOTE_NAME, RCLONE_REMOTE_DIR, CRON, and TIMEZONE at minimum.
+
+### OpenSubtitles auth error in Bazarr
+opensubtitles.org and opensubtitles.com are completely separate services with separate accounts. Bazarr's provider is opensubtitles.com — must have a .com account specifically. Using .org credentials causes AuthenticationError and 12-hour throttle.
+
+### Containers stopping unexpectedly
+If multiple containers stop simultaneously check docker inspect on vaultwarden-backup for restart count. A crash-looping container at high restart counts taxes the Docker daemon. Stop it with docker stop and fix the root cause before restarting.
+
+### Private tracker ratio protection
+Auto-upgrades in Radarr/Sonarr can trigger new downloads that affect ratio on private trackers. Set Upgrade Until cutoff in quality profiles to limit automatic upgrade behavior.
 
 ## Dev Machine Setup (WSL Ubuntu 24.04)
 
