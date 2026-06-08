@@ -51,9 +51,11 @@
 - Unpackerr: add Sonarr Anime and Radarr Anime instances to docker-compose.yml environment variables.
 - Bazarr: fixed — was using opensubtitles.org credentials instead of opensubtitles.com. Account created on .com, authentication now working.
 - Sonarr Anime: when adding series, always set Series Type to Anime (not Standard). Also set default Series Type to Anime in Seerr → Settings → Sonarr Anime instance.
-- Jellyfin: configure AniDB/AniList metadata plugins when anime content added
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
   (play content and check Dashboard > Activity)
+- Jellyfin anime plugins: AniDB, AniList, and TheTVDB plugins installed and configured. Anime library metadata downloaders set to AniDB > AniList > TheTVDB > TheMovieDb. Image fetchers same order. AniDB enabled for Seasons and Episodes.
+- Seerr anime metadata provider: changed from TMDB to TheTVDB for anime. Series stays as TMDB.
+- Cross-seed: config directory created at ~/magi/cross-seed/. Setup not yet complete — needs config.js with Prowlarr Torznab URLs and qBittorrent connection. Service already in docker-compose.yml behind cross-seed profile. Key config notes: qBittorrent connects via vpn:8080 not qbittorrent:8080, Prowlarr URLs use prowlarr:9696 internally.
 - Bazarr: configured with OpenSubtitles provider, English language profile ✓
 - Seerr: setup wizard complete, connected to Jellyfin, Sonarr, Sonarr-anime, Radarr, Radarr-anime ✓
 - Subdomain routing: all active services migrated from path-prefix to subdomain routing ✓
@@ -105,7 +107,10 @@ For hardlinks to work, both the download client and arr apps must share the same
 - vaultwarden/docker-compose.yml references vaultwarden/backup.env for the rclone-backup service. This file must exist or docker compose config fails entirely, breaking variable resolution for ALL services (symptoms: labels missing from containers, env vars not interpolating). Fix: `touch ~/magi/vaultwarden/backup.env`. Add this to fresh install steps.
 
 ### Sonarr Anime series type
-- When adding anime series, Series Type must be set to Anime (not Standard). Standard uses S01E01 format which Nyaa doesn't index — Anime type uses absolute episode numbering. Set default in Seerr → Settings → Sonarr Anime to avoid fixing this per-series.
+- Sonarr Anime series type must be set to Anime — there is no global default. Always add anime through Seerr where the default is configured, not directly in Sonarr Anime. If adding directly, manually set Series Type to Anime before saving or interactive search will use standard S01E01 format and return no results from Nyaa.
+
+### Jellyfin series metadata conflicts
+- When a long-running series has been rebooted or continued under a different arc, AniDB and TVDB may handle the season and episode structure differently, causing wrong images and episode metadata. Fix: go to the series in Jellyfin, use Identify to manually match to the correct TheTVDB entry, then go to Edit and lock all metadata fields to prevent AniDB from overwriting on future refreshes. Long term fix: split conflicting arcs into separate series in Sonarr Anime pointing to separate folders.
 
 ### Nyaa indexer settings (Prowlarr)
 - Anime TV Nyaa indexer: enable "Improve Sonarr compatibility" and "Remove first season keywords"

@@ -100,6 +100,8 @@ Never assume file contents — always ask and provide the command.
 
 **Log inspection workflow**: for large log files use `docker compose logs <service> --since 24h > /tmp/service.log` then scp from server to local machine for review. The Samba share at `/mnt/data` can also be used if write permissions are correct (`sudo chown -R 1000:1000 /mnt/data` if needed).
 
+**Private tracker opsec**: never name specific private trackers in docs, commits, or comments. Use generic terms like "private tracker", "PT", or abbreviations agreed with the user. Never include IRC addresses, invite commands, passkeys, or tracker-specific operational details in any tracked file.
+
 ## Deployment Context
 
 - **Host**: HP EliteDesk 800 G4, i7-8700, 16GB RAM, headless Debian
