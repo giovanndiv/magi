@@ -98,6 +98,8 @@ Never assume file contents — always ask and provide the command.
 
 **Claude Code prompt format**: write all prompts as plain text with no markdown code fences (no triple backticks). Yaml and bash blocks go inline with plain indentation. No nested formatting.
 
+**Adding a new service**: To add a new service, follow docs/playbooks/ADD_SERVICE.md.
+
 **Log inspection workflow**: for large log files use `docker compose logs <service> --since 24h > /tmp/service.log` then scp from server to local machine for review. The Samba share at `/mnt/data` can also be used if write permissions are correct (`sudo chown -R 1000:1000 /mnt/data` if needed).
 
 **Private tracker opsec**: never name specific private trackers in docs, commits, or comments. Use generic terms like "private tracker", "PT", or abbreviations agreed with the user. Never include IRC addresses, invite commands, passkeys, or tracker-specific operational details in any tracked file.
