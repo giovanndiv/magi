@@ -660,6 +660,40 @@ services:
       - AUTOHEAL_CONTAINER_LABEL=all
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: always
+    # Dozzle is a single static binary (no shell/wget), so the documented
+    # native subcommand is used instead of a wget healthcheck.
+    healthcheck:
+      test: ["CMD", "/dozzle", "healthcheck"]
+      interval: 30s
+      timeout: 10s
+      start_period: 30s
+      retries: 10
+    environment:
+      - TZ=${TIMEZONE}
+      # Simple file-based auth: requires ${CONFIG_ROOT:-.}/dozzle/users.yml
+      # (generated server-side via `docker run amir20/dozzle generate`).
+      - DOZZLE_AUTH_PROVIDER=simple
+    volumes:
+      # Read-only socket: Dozzle only needs to read container logs.
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${CONFIG_ROOT:-.}/dozzle:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.dozzle.rule=Host(`${DOZZLE_HOSTNAME}`)
+      - traefik.http.routers.dozzle.tls=true
+      - traefik.http.routers.dozzle.tls.certresolver=myresolver
+      - traefik.http.services.dozzle.loadbalancer.server.port=8080
+      - homepage.group=System
+      - homepage.name=Dozzle
+      - homepage.icon=dozzle.png
+      - homepage.href=https://${DOZZLE_HOSTNAME}
+      - homepage.description=Container log viewer
+    profiles:
+      - dozzle
 
 networks:
   default:

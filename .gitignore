@@ -47,6 +47,9 @@ ansible/*.retry
 /sonarr-anime/
 /radarr-anime/
 
+# Dozzle data dir (contains users.yml with hashed credentials, server-only)
+/dozzle/
+
 # Editor swap files
 *.swp
 
