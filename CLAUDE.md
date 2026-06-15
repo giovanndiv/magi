@@ -198,7 +198,7 @@ All services accessible via subdomain routing on `geo-front.net`:
 ### Optional Services via Profiles
 
 Some services in `docker-compose.yml` require enabling via `COMPOSE_PROFILES`:
-`lidarr`, `sabnzbd`, `flaresolverr`, `calibre-web`, `suggestarr`, `cross-seed`, `cleanuparr`
+`lidarr`, `sabnzbd`, `flaresolverr`, `calibre-web`, `suggestarr`, `cross-seed`, `cleanuparr`, `dozzle`
 
 ### Hardware-Specific Overrides
 
