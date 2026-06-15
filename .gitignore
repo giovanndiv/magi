@@ -50,5 +50,8 @@ ansible/*.retry
 # Editor swap files
 *.swp
 
+# VS Code workspace file
+magi.code-workspace
+
 # General
 .DS_Store
