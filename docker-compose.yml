@@ -671,9 +671,12 @@ services:
       interval: 30s
       timeout: 10s
       start_period: 30s
-      retries: 5
+      retries: 10
     environment:
       - TZ=${TIMEZONE}
+      # Simple file-based auth: requires ${CONFIG_ROOT:-.}/dozzle/users.yml
+      # (generated server-side via `docker run amir20/dozzle generate`).
+      - DOZZLE_AUTH_PROVIDER=simple
     volumes:
       # Read-only socket: Dozzle only needs to read container logs.
       - /var/run/docker.sock:/var/run/docker.sock:ro
