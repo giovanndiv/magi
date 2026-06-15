@@ -107,11 +107,33 @@ proceed.
    exact keys to add to the real `~/magi/.env` on the server, and **wait** — do
    not invent values. Real secrets live only on the server, never in git.
 
-4. Bring the service up:
+   - **Exception — non-secret, derived values** (e.g. `<SERVICE>_HOSTNAME`,
+     which is always `<service>.${BASE_HOSTNAME}`): these are deterministic and
+     identical to the `.env.example` entry, so you may append them to the server
+     `.env` yourself over SSH rather than waiting. Quote literally so compose
+     expands `${BASE_HOSTNAME}` (do **not** let your shell expand it):
+     `ssh gendo@nerv "cd ~/magi && grep -q '^<SERVICE>_HOSTNAME=' .env || echo '<SERVICE>_HOSTNAME=<service>.\${BASE_HOSTNAME}' >> .env"`
+
+4. **If the service needs a server-side config/credentials file in its bind-
+   mounted data dir** (e.g. an auth `users.yml`): note that when the container
+   first starts, Docker creates the host-side bind-mount dir
+   (`${CONFIG_ROOT:-.}/<service>`) owned by **root**, so `gendo` cannot write
+   into it over the (non-`sudo`) SSH session. `gendo` also does **not** have
+   passwordless `sudo`. Therefore:
+   - Ask the human to run, in a real terminal with a TTY (the in-session `!`
+     prefix has no TTY, so `sudo` cannot prompt):
+     `ssh -t gendo@nerv "sudo chown gendo:gendo ~/magi/<service>"`
+   - After the human confirms, you can write the file over plain SSH.
+   - Generate hashed credentials with the image's own tool and redirect the
+     output to the server-side file only — **never** echo a real secret into a
+     tracked file, and add the data dir to `.gitignore` so it can never be
+     committed.
+
+5. Bring the service up:
    `docker compose up -d <service>`
    (use `--force-recreate` if env vars used in **labels** changed).
 
-5. **Determine health:**
+6. **Determine health:**
    - **If the container defines a healthcheck:** poll
      `docker inspect --format '{{.State.Health.Status}}' <service>`
      until it reads `healthy` or `unhealthy`, up to a **3-minute** timeout.
@@ -120,7 +142,7 @@ proceed.
      30 seconds, then scan recent logs for an obvious readiness line or a fatal
      error.
 
-6. **Troubleshooting loop (max 5 iterations):**
+7. **Troubleshooting loop (max 5 iterations):**
    - On unhealthy / restarting / error: pull logs with
      `docker compose logs <service> --since 5m`, read them, and form a
      hypothesis.
