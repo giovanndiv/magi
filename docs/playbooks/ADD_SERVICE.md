@@ -64,7 +64,9 @@ proceed.
      documented equivalents) and `TZ=${TIMEZONE}`
    - config volume under `${CONFIG_ROOT:-.}/<service>:/config`
    - data volume under `${DATA_ROOT}` **only if** the service needs media access
-   - `networks: [nerv]`
+   - **no `networks:` key** — services rely on the compose default network, which
+     is defined once at the bottom of the file as `default: { name: nerv }`.
+     Adding an explicit `networks:` list diverges from every existing service.
    - `restart: always`
 
 4. **If the service is web-exposed, add Traefik labels** following the existing
@@ -78,30 +80,56 @@ proceed.
 
 5. **Gate non-core services behind a compose profile.** If the service is not
    essential to the media pipeline, add `profiles: [<service>]` so it does not
-   start by default, rather than letting it come up with the core stack.
+   start by default, rather than letting it come up with the core stack. Note
+   that a profiled service will only run once its profile is listed in
+   `COMPOSE_PROFILES` in the server `.env` (see the Deploy loop) — gating it does
+   not start it.
 
 6. **Add a homepage label block** matching the format other services use:
    `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, and
    `homepage.widget.*` if the service has a supported widget.
 
 7. **Add any new env vars to `.env.example`** with safe placeholder values.
-   **NEVER** write real secrets to any tracked file.
+   **NEVER** write real secrets to any tracked file. If the service stores
+   credentials or config in a bind-mounted dir (e.g. an auth `users.yml` under
+   `${CONFIG_ROOT:-.}/<service>`), add that dir to `.gitignore` now — matching
+   the existing `/sonarr/`, `/cleanuparr/`, `/dozzle/` entries — so server-side
+   secrets can never be committed.
 
-8. **Add a healthcheck using `wget`** (not `curl` — it is absent from many
-   minimal images). Include `timeout` and `start_period`. Use `cleanuparr` as
-   the reference pattern. **If the upstream image already ships its own
-   healthcheck, do not override it.**
+8. **Add a healthcheck — pick the method that fits the image.** Always include
+   `timeout` and `start_period`.
+   - **Image already ships a healthcheck** (its Dockerfile defines `HEALTHCHECK`,
+     or upstream docs show one): use it, do **not** override.
+   - **Minimal / distroless image with no shell or `wget`** (single static
+     binary — e.g. Dozzle): use the image's own healthcheck subcommand if it has
+     one, e.g. `test: ["CMD", "/<binary>", "healthcheck"]`, or a shell-free TCP
+     check. Do **not** force a `wget` test — it fails because the binary isn't in
+     the image. Confirm from the upstream docs which applies.
+   - **Standard image with a shell:** use `wget` (not `curl` — absent from many
+     minimal images), e.g.
+     `test: ["CMD", "wget", "-q", "--spider", "http://localhost:<port>/<path>"]`.
+     Use `cleanuparr` as the reference pattern.
 
-9. **Validate locally before pushing.** Copy `.env.example` to `.env` and run
-   `docker compose config`. It must succeed (and resolve the new service)
-   before you push.
+9. **Validate before pushing.**
+   - **YAML sanity (always):** parse the file so a typo can't reach the server,
+     and confirm the new service resolves —
+     `python3 -c "import yaml; print('dozzle' in yaml.safe_load(open('docker-compose.yml'))['services'])"`
+     (substitute the service name).
+   - **`docker compose config` (only if Docker is available locally):** copy
+     `.env.example` to `.env` and run
+     `COMPOSE_PROFILES=<service> docker compose config`. The dev machine may have
+     **no Docker daemon** (e.g. WSL) — if so, skip this and rely on the
+     authoritative `docker compose config` run on nerv in the Deploy loop.
 
 ## Deploy and Test Loop (on nerv over SSH)
 
 1. Commit and push the `feat/add-<service>` branch.
 
-2. SSH to nerv and sync the branch:
-   `ssh gendo@nerv "cd ~/magi && git fetch && git checkout feat/add-<service> && git pull"`
+2. SSH to nerv and sync the branch, then run the **authoritative**
+   `docker compose config` there (this is the real validation if Docker wasn't
+   available on the dev machine):
+   `ssh gendo@nerv "cd ~/magi && git fetch && git checkout feat/add-<service> && git pull && COMPOSE_PROFILES=<service> docker compose config >/dev/null && echo CONFIG_OK"`
+   If it errors, fix the compose block before going further.
 
 3. **If new env vars are required for the service to run**, tell the human the
    exact keys to add to the real `~/magi/.env` on the server, and **wait** — do
@@ -153,6 +181,37 @@ proceed.
    - Increment the iteration counter. **After 5 failed iterations, STOP** and
      report the logs and everything you tried to the human. Do not continue
      blindly.
+
+8. **Smoke-test routing and auth for web-exposed services.** Container health is
+   not proof the web UI works. From nerv, hit the service through Traefik (use
+   `--resolve` so you don't depend on DNS):
+   - Reachable / routed: `curl -sk --resolve <SERVICE>_HOST:443:127.0.0.1 -o /dev/null -w "%{http_code}\n" https://<service>.geo-front.net/`
+   - If auth is enabled: confirm an unauthenticated request is redirected or
+     rejected (3xx/401), valid credentials are accepted, and **bad credentials
+     are refused (401)**. Report the result.
+
+9. **Persist the profile only if the service should be always-on.** Gating
+   behind a profile keeps it off by default. If the human wants it to start with
+   the whole stack, append the profile to `COMPOSE_PROFILES` in the server `.env`
+   (don't clobber the existing list):
+   `ssh gendo@nerv "cd ~/magi && grep -q '^COMPOSE_PROFILES=.*\b<service>\b' .env || sed -i '/^COMPOSE_PROFILES=/s/\$/,<service>/' .env"`
+   Otherwise leave it on-demand (`COMPOSE_PROFILES=<service> docker compose up -d <service>`).
+
+## Abort / Rollback
+
+If the service cannot be made healthy (5 iterations exhausted) or the human calls
+it off, back the change out cleanly rather than leaving a half-deployed service:
+
+1. On nerv: `docker compose stop <service> && docker compose rm -f <service>`,
+   then `git checkout master && git pull origin master` and bring the rest of the
+   stack back to the known-good state (`docker compose up -d`).
+2. Remove any orphaned server-side config dir only if **you** created it this
+   session and it holds nothing the human wants to keep (confirm first).
+3. Locally: `git checkout master`, delete the feature branch
+   (`git branch -D feat/add-<service>`), and close/delete the PR and remote branch
+   if one was opened.
+4. Revert the server `.env` edits you made (e.g. remove the `<service>` entry from
+   `COMPOSE_PROFILES` and any `<SERVICE>_HOSTNAME` line you added).
 
 ## PR and Review Loop
 
