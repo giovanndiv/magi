@@ -38,6 +38,7 @@
 - **Autobrr**: deployed, IRC connected, filters configured (Freeleech, TV→Sonarr, Movies→Radarr) ✓
 - **Vaultwarden**: deployed, signups disabled, admin panel enabled, Bitwarden extension connected ✓
 - **Profilarr**: deployed, Dumpstarr database linked, all four arr instances connected, profiles synced ✔
+- **Dozzle**: deployed (amir20/dozzle:latest, v10.6.5) via the ADD_SERVICE playbook. Container log viewer at dozzle.geo-front.net, gated behind the `dozzle` compose profile (now in server COMPOSE_PROFILES so it starts with the stack). Read-only docker socket, native `/dozzle healthcheck` (no shell/wget in image), simple file-based auth enabled (DOZZLE_AUTH_PROVIDER=simple, user `gendo`, hashed users.yml at ~/magi/dozzle/users.yml — server-only, `/dozzle/` gitignored). Login verified (correct creds → 200+JWT, bad creds → 401). ✓
 
 ### Configuration
 - Vaultwarden backup: configured rclone-backup with Google Drive (RcloneBackup remote), daily 2am cron, 30 day retention, zip encrypted. Backup verified working. ✔
