@@ -302,6 +302,19 @@ crontab -e
 - Settings → Indexers: add indexers as needed
 - Filters → Create filters to route grabs to the appropriate arr instance or qBittorrent category
 
+### 3.14 Dozzle
+Container log viewer. Profile-gated (`dozzle`) with simple file-based auth.
+- Add `DOZZLE_HOSTNAME=dozzle.${BASE_HOSTNAME}` to `.env` (non-secret, derived)
+- Enable the profile: add `dozzle` to `COMPOSE_PROFILES` in `.env`
+- First start creates the bind-mount data dir owned by **root**, so hand it to
+  `gendo` before writing the auth file (needs a real TTY for sudo):
+  `ssh -t gendo@nerv "sudo chown gendo:gendo ~/magi/dozzle"`
+- Generate the admin user (bcrypt-hashed; stays server-only, `/dozzle/` is gitignored):
+  `docker run --rm amir20/dozzle generate gendo --password '<password>' --name "Gendo Ikari" > ~/magi/dozzle/users.yml`
+- `docker compose up -d --force-recreate dozzle`
+- Verify: `https://dozzle.geo-front.net` redirects to `/login`; log in with the credentials above
+- Save the credentials in Vaultwarden
+
 ## Phase 4: Verification
 
 ### 4.1 VPN Leak Check
