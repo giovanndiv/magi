@@ -424,7 +424,7 @@ services:
     user: ${USER_ID}:${GROUP_ID}
     volumes:
       - ${CONFIG_ROOT:-.}/cross-seed:/config
-      - ${DOWNLOAD_ROOT}:/data/torrents
+      - ${DATA_ROOT}:/data
     command: daemon
     restart: always
     profiles:
