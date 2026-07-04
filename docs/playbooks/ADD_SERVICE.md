@@ -5,6 +5,11 @@
 > service to the MAGI Docker Compose stack. Stop and escalate to the human at
 > every point marked **STOP**.
 
+> **Note:** if the service's value lives in a hand-authored config file
+> containing secrets, external API calls, or destructive-action settings (e.g.
+> cross-seed), use `CONFIGURE_SERVICE.md` instead — either standalone or as a
+> second pass after this playbook deploys the compose block.
+
 ## Purpose
 
 This playbook lets you add one new service to the MAGI Docker Compose stack end
