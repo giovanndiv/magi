@@ -1,0 +1,26 @@
+name: gitleaks
+
+# Secret scanning for the MAGI stack (public repo). Fails the check if any
+# secret is detected so a PR carrying a leaked secret cannot be merged.
+on:
+  pull_request:
+  push:
+    branches: [master]   # backstop on the protected branch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write   # allows the action to comment findings on the PR
+
+jobs:
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so the action can diff the PR range
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
