@@ -113,6 +113,16 @@ live under the same `/data` mount, or hardlinking silently fails across devices.
 change is an `ADD_SERVICE.md`-style **important-change PR** (it affects running
 services), not a docs change.
 
+**Mount breadth, not just mount presence.** The mount must be wide enough for
+the tool to *see* everything it matches against — not only where it writes. In
+the real cross-seed run the compose block mounted only `${DOWNLOAD_ROOT}`
+(`/data/torrents`) instead of the full `${DATA_ROOT}` (`/data`), so cross-seed
+was blind to the media library it needed to cross-seed against — the config's
+`dataDirs` referenced paths the mount never exposed, and this surfaced only at
+runtime. Enumerate every path the config will point at and confirm each is
+visible *inside the container* (`ssh gendo@nerv "docker compose run --rm
+<service> ls <path>"` or equivalent) **before writing the config**.
+
 ## Scaffold Steps (your lane)
 
 1. **Branch.** Check out a new branch named `feat/configure-<service>`.
@@ -206,12 +216,22 @@ re-runs a destructive action.
    (e.g. cross-seed matched the expected torrents and injected only those, with
    no unexpected tracker calls or data moves).
 
-3. **Only promote to persistent / daemon mode after that confirmation** — flip
+3. **Verify the intended END STATE, not just that execution completed.** A run
+   that reports success can still leave the wrong end state. In the real
+   cross-seed run, injected torrents rechecked to 100% and showed as "done" — so
+   execution looked complete — but they had silently stopped and were **not
+   announcing to the tracker**; they only actually seeded after a manual
+   force-resume. Decide the concrete end-state check up front (torrents active
+   and announcing / actually seeding, the API call produced the intended effect,
+   the data landed where intended) and have the human confirm *that*, not merely
+   that the tool exited without error.
+
+4. **Only promote to persistent / daemon mode after that confirmation** — flip
    to `command: daemon` (or `restart: always` / profile-persist per
    `ADD_SERVICE.md`) once, and only once, the human approves the observed first
    run.
 
-4. **If the first run fails: do NOT loop.** Read the logs, form **ONE**
+5. **If the first run fails: do NOT loop.** Read the logs, form **ONE**
    hypothesis, present it and the proposed fix to the human, and **wait**. Never
    re-run a destructive action autonomously to "see if it works now."
 
