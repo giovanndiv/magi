@@ -272,6 +272,8 @@ Steps: commit and push `feat/configure-<service>`, then:
 
 ## Guardrails (must never do without stopping to ask)
 
+- **Never modify any service other than the one being configured** — no edits to
+  other services' configs or compose blocks.
 - **Never invent, guess, or fill a secret yourself.**
 - **Never finalize a safety-critical value without explicit human
   confirmation** — default to conservative and flag it.
