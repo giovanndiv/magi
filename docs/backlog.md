@@ -22,6 +22,7 @@
 - **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
   `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
   availability. Needs configuration at `~/magi/cross-seed/config.js`.
+- **Cross-seed daemon mode**: the recovery run used a one-shot `dataDirs` search config. Strip `dataDirs` and switch cross-seed to daemon mode for ongoing cross-seeding of new downloads. When doing so, watch for injected torrents landing stopped/"done" and not announcing.
 - Immich: photo management, add when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
 - Flaresolverr: replaced with Byparr (ghcr.io/thephaseless/byparr:latest), running on port 8191 ✓
@@ -50,6 +51,7 @@
 - Quality Definitions: set min/max values from TRaSH Guides in all four arr instances. One-time manual setup.
 - Radarr upgrade cutoff: set Upgrades Allowed cutoff in Movies 1080p profile to prevent unwanted upgrades affecting private tracker ratios.
 - Unpackerr: add Sonarr Anime and Radarr Anime instances to docker-compose.yml environment variables.
+- First real run of CONFIGURE_SERVICE: use it on the next genuinely config-driven service (e.g. a Recyclarr/Profilarr sync config) as its validation-and-hardening pass.
 - Bazarr: fixed — was using opensubtitles.org credentials instead of opensubtitles.com. Account created on .com, authentication now working.
 - Sonarr Anime: when adding series, always set Series Type to Anime (not Standard). Also set default Series Type to Anime in Seerr → Settings → Sonarr Anime instance.
 - Jellyfin: verify QuickSync QSV is actually being used during transcoding 
@@ -88,6 +90,11 @@
     /mnt/data/torrents)
   - seerr config directory pre-creation with correct ownership
 - Test and validate full Ansible playbook end-to-end on a fresh Debian install
+
+#### Done
+- **CONFIGURE_SERVICE playbook**: created `docs/playbooks/CONFIGURE_SERVICE.md`, the companion to ADD_SERVICE for config-driven services whose value lives in a hand-authored config file containing secrets, external API calls, or destructive actions. Covers config classification (secret / environment-specific / safety-behavior), a mount-visibility-and-breadth precondition, a handoff checkpoint where the human fills secrets server-side, a one-time-vs-steady-state distinction, and a gated human-watched first run that verifies the intended END STATE, not just that execution completed. cross-seed is the worked example. ✓
+- **Playbooks README / orchestrator**: created `docs/playbooks/README.md` as the index and router for the playbook set — routing guide (ADD vs REMOVE vs CONFIGURE), shared conventions stated once (SSH precondition, clean-tree, valid-config, the @claude two-round review cap, the root-owned-bind-mount chown chain, secrets-never-in-tracked-files), a capability map, and a roadmap of future playbooks. ✓
+- **gitleaks secret scanning (CI)**: added `.github/workflows/gitleaks.yml` running gitleaks on every PR and on push to master, with custom rules in `.gitleaks.toml` for this repo's exposure surface (PT passkeys/announce URLs, *arr and Prowlarr API keys, RFC1918 addresses). Full git history audited (281 commits) — clean, no leaks. `GITLEAKS_VERSION` pinned and actions SHA-pinned since this is the supply-chain/secret-hygiene workflow itself. ✓
 
 ## Maintenance
 
@@ -195,6 +202,15 @@ If multiple containers stop simultaneously check docker inspect on vaultwarden-b
 
 ### Private tracker ratio protection
 Auto-upgrades in Radarr/Sonarr can trigger new downloads that affect ratio on private trackers. Set Upgrade Until cutoff in quality profiles to limit automatic upgrade behavior.
+
+### Cross-seed data-based recovery (reseed existing library after unsatisfieds)
+When torrents are removed from the client but the data still exists on disk, cross-seed can rematch and reseed without re-downloading. Key setup: mount the FULL data root into the cross-seed container (not just the torrents dir) so it can see the media library; point `dataDirs` at the media paths; use `matchMode: "flexible"` for renamed library files; keep `skipRecheck: false` so injected torrents are verified before seeding; `linkDir` must be on the same mount as the data (cross-device hardlinks fail). Run as a one-shot search (`docker compose run --rm cross-seed search`), not daemon, for a recovery pass. NOTE: injected torrents can land in a stopped/"done" state and silently not announce to the tracker — force-resume them and confirm they appear as seeding on the tracker. Data-based matching only recovers content still on disk; content that was downloaded-then-deleted is unrecoverable and is a tracker-waiver conversation, not a technical fix.
+
+### "Indexer unavailable" in the arrs usually means a failed GRAB, not a down indexer
+Search is a cheap call that succeeds while the actual torrent-file fetch through Prowlarr fails (e.g. tracker returning an error page instead of a `.torrent`, or a download restriction). Diagnose by checking the Prowlarr-side download error, not just the arr's indexer status.
+
+### PT unsatisfied-torrents incident (resolved)
+Root cause was a per-indexer seed-time value that counted download time toward the seed window, so torrents fell short of the 10-day minimum; a downstream removal then deleted them. Fixed by removing the bad timer (everything now seeds indefinitely), recovering all on-disk content via cross-seed, and requesting a staff waiver for the genuinely-unrecoverable remainder (deleted data / bulk-removed torrents). Set PT per-indexer seed time correctly going forward.
 
 ## Dev Machine Setup (WSL Ubuntu 24.04)
 
