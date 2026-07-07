@@ -25,7 +25,7 @@ id = "magi-tracker-passkey"
 description = "Private-tracker passkey / announce token"
 regex = '''(?i)(?:passkey|authkey|torrent_pass|rsskey|apikey)["'=:\s/]{0,4}([a-z0-9]{20,64})\b'''
 secretGroup = 1
-keywords = ["passkey", "authkey", "torrent_pass", "rsskey"]
+keywords = ["passkey", "authkey", "torrent_pass", "rsskey", "apikey"]
 
 [[rules]]
 id = "magi-tracker-announce-url"
@@ -90,12 +90,26 @@ paths = [
   '''\.gitleaks\.toml$''', # this config contains example regexes/tokens
 ]
 
+# Line-scoped: a container image digest is a run of hex a default rule could
+# match; we need the surrounding line ("...@sha256:<64hex>") to know it's a
+# digest, not a secret. Kept separate so this broad "line" scope applies ONLY
+# to digests.
 [[allowlists]]
-description = "Known-safe placeholder tokens and non-secret matches"
+description = "Container image sha256 digests are not secrets"
 condition = "OR"
 regexTarget = "line"
 regexes = [
-  '''@sha256:[a-f0-9]{64}''',        # container image digests, not secrets
+  '''@sha256:[a-f0-9]{64}''',
+]
+
+# Match-scoped: exempt a finding only when the matched secret ITSELF is a
+# placeholder token — not merely when a placeholder appears somewhere on the
+# same line — so a real secret sharing a line with a placeholder is still caught.
+[[allowlists]]
+description = "Known-safe placeholder tokens (only when the secret itself is a placeholder)"
+condition = "OR"
+regexTarget = "match"
+regexes = [
   '''(?i)REPLACE_ME''',
   '''(?i)changeme''',
   '''(?i)adminadmin''',
