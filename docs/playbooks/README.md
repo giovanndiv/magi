@@ -61,9 +61,15 @@ not a preference. Every playbook inherits this rule:
   to `.gitignore` (matching the existing `/sonarr/`, `/cross-seed/`,
   `/cleanuparr/` entries) so its contents can never be committed.
 - **Every PR must pass the repository's secret scan before merge.** This is
-  enforced by a **CI secret-scanning check**, not left to reviewer diligence — a
-  human reviewer missing a leaked key is not the safety net; the automated scan
-  is (see the roadmap below).
+  enforced by an **active CI secret-scanning check** — **gitleaks**, run on every
+  pull request (and on push to `master`) by
+  [`.github/workflows/gitleaks.yml`](../../.github/workflows/gitleaks.yml) against
+  the rules in [`.gitleaks.toml`](../../.gitleaks.toml). Any detected secret fails
+  the check, so a leaking PR cannot be merged. This is not left to reviewer
+  diligence — a human reviewer missing a leaked key is not the safety net; the
+  automated scan is. The ruleset extends the gitleaks defaults with rules for this
+  repo's exposure surface (tracker passkeys/announce URLs, *arr/Prowlarr API keys,
+  and Tailscale/RFC1918 IPs).
 
 ## Capability map
 
@@ -80,5 +86,6 @@ Candidates already discussed, kept here so the set has a direction:
 - **VPN_RECOVERY** — recover the qBittorrent/Gluetun VPN subsystem. Highest-value
   next playbook given the Gluetun control-server auth migration in the backlog.
 - **TROUBLESHOOT_SERVICE** — diagnose an unhealthy service from its logs.
-- **CI secret-scanning (gitleaks) on every PR** — enforces the Secrets & exposure
-  convention above; not yet built.
+
+_(CI secret-scanning with gitleaks — previously listed here — is now **active**;
+see the **Secrets & exposure** section above.)_

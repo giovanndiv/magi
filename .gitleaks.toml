@@ -1,0 +1,127 @@
+# gitleaks configuration for the MAGI stack (public repo).
+# Extends the built-in gitleaks ruleset and adds rules for this repo's
+# specific exposure surface: private-tracker passkeys/announce URLs,
+# *arr/Prowlarr API keys, and private/LAN + Tailscale (AT-Field) IPs.
+#
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+
+title = "MAGI gitleaks config"
+
+[extend]
+# Inherit all of gitleaks' default rules (AWS keys, generic-api-key,
+# private keys, tokens, Tailscale auth keys, etc.); rules below take
+# precedence over the defaults.
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Custom rules
+# ---------------------------------------------------------------------------
+
+# Private-tracker passkey / announce URL: a long hex/alphanumeric token bound
+# to a passkey-style key or an /announce path. Catches a real tracker announce
+# URL or passkey being pasted into a config, doc, or commit.
+[[rules]]
+id = "magi-tracker-passkey"
+description = "Private-tracker passkey / announce token"
+regex = '''(?i)(?:passkey|authkey|torrent_pass|rsskey|apikey)["'=:\s/]{0,4}([a-z0-9]{20,64})\b'''
+secretGroup = 1
+keywords = ["passkey", "authkey", "torrent_pass", "rsskey", "apikey"]
+
+[[rules]]
+id = "magi-tracker-announce-url"
+description = "Tracker announce URL containing an embedded passkey token"
+regex = '''(?i)https?://[^\s"'<>]+/(?:[a-z0-9]{16,64}/)?announce(?:\.php)?(?:/[a-z0-9]{16,64})?(?:\?[^\s"'<>]*)?'''
+keywords = ["announce"]
+
+  # The abstract opsec references in docs (the word "announce" in prose) carry
+  # no real token, so ignore markdown for this URL rule.
+  [[rules.allowlists]]
+  description = "Ignore announce references in documentation prose"
+  condition = "OR"
+  paths = ['''.*\.md$''']
+
+# *arr / Prowlarr / service API keys: 32-char hex anchored to an api-key key
+# name (env var, XML <ApiKey>, or X-Api-Key header). Anchoring avoids matching
+# unrelated 32-hex strings such as image sha256 digests.
+[[rules]]
+id = "magi-arr-api-key"
+description = "*arr / Prowlarr API key (32-char hex bound to an api-key key)"
+regex = '''(?i)(?:api[_-]?key|apikey|x-api-key|<apikey>)["'=:>\s]{0,4}([a-f0-9]{32})\b'''
+secretGroup = 1
+keywords = ["api_key", "apikey", "api-key", "x-api-key"]
+
+# Tailscale / AT-Field CGNAT address (100.64.0.0/10). This is the address class
+# the repo deliberately obfuscates as `100.x.x.x`, so a real one is a leak.
+[[rules]]
+id = "magi-tailscale-cgnat-ip"
+description = "Tailscale (AT-Field) CGNAT IP address (100.64.0.0/10)"
+regex = '''\b100\.(?:6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\.\d{1,3}\.\d{1,3}\b'''
+
+# Private / LAN IP address (RFC1918). Scoped to exclude documentation and the
+# one legitimate docker macvlan address, since this repo's docs are full of
+# example LAN IPs — this keeps the rule practical rather than noisy while still
+# catching a real LAN IP committed to a compose/config/env file.
+[[rules]]
+id = "magi-rfc1918-ip"
+description = "Private/LAN IP address (RFC1918) outside documentation"
+regex = '''\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2[0-9]|3[01])\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3})\b'''
+
+  [[rules.allowlists]]
+  description = "Example LAN IPs live in docs; 10.0.0.10 is the AdGuard macvlan address"
+  condition = "OR"
+  paths = ['''.*\.md$''']
+  regexes = [
+    '''10\.0\.0\.10''',      # adguardhome docker macvlan static IP (not a secret)
+    '''172\.17\.\d{1,3}\.\d{1,3}''',   # docker default bridge (host.docker.internal)
+    '''\b\d{1,3}\.\d{1,3}\.\d{1,3}\.0\b''',   # network base addresses (x.x.x.0)
+    '''127\.0\.0\.1''',
+    '''0\.0\.0\.0''',
+  ]
+
+# ---------------------------------------------------------------------------
+# Global allowlist — known-safe patterns
+# ---------------------------------------------------------------------------
+
+[[allowlists]]
+description = "Template files and this config carry placeholders, not secrets"
+condition = "OR"
+paths = [
+  '''\.env\.example$''',   # template of placeholder values by definition
+  '''\.gitleaks\.toml$''', # this config contains example regexes/tokens
+]
+
+# Line-scoped: a container image digest is a run of hex a default rule could
+# match; we need the surrounding line ("...@sha256:<64hex>") to know it's a
+# digest, not a secret. Kept separate so this broad "line" scope applies ONLY
+# to digests.
+[[allowlists]]
+description = "Container image sha256 digests are not secrets"
+condition = "OR"
+regexTarget = "line"
+regexes = [
+  '''@sha256:[a-f0-9]{64}''',
+]
+
+# Match-scoped: exempt a finding only when the matched secret ITSELF is a
+# placeholder token — not merely when a placeholder appears somewhere on the
+# same line — so a real secret sharing a line with a placeholder is still caught.
+[[allowlists]]
+description = "Known-safe placeholder tokens (only when the secret itself is a placeholder)"
+condition = "OR"
+regexTarget = "match"
+regexes = [
+  '''(?i)REPLACE_ME''',
+  '''(?i)changeme''',
+  '''(?i)adminadmin''',
+  '''(?i)admin123''',
+  '''(?i)example\.(?:com|org|net)''',
+  '''<[a-zA-Z0-9_.-]+>''',           # angle-bracket placeholders, e.g. <server-lan-ip>
+  '''\$\{[A-Z0-9_]+\}''',            # unexpanded env-var references
+  '''\{\{[^}]+\}\}''',               # ansible/jinja template variables
+]
+stopwords = [
+  "localhost",
+  "your_",
+  "example",
+  "placeholder",
+]
