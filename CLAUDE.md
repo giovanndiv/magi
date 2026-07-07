@@ -108,6 +108,8 @@ Never assume file contents — always ask and provide the command.
 
 **Private tracker opsec**: never name specific private trackers in docs, commits, or comments. Use generic terms like "private tracker", "PT", or abbreviations agreed with the user. Never include IRC addresses, invite commands, passkeys, or tracker-specific operational details in any tracked file.
 
+**Secret scanning**: gitleaks runs on every PR (and on push to master) via `.github/workflows/gitleaks.yml`, with custom rules in `.gitleaks.toml` for this repo's exposure surface (PT passkeys/announce URLs, *arr and Prowlarr API keys, RFC1918 addresses). Two conventions must be preserved when editing `.gitleaks.toml`: (1) allowlist scoping — the `@sha256:` image-digest exemption uses `regexTarget = "line"`, but placeholder-token exemptions (`REPLACE_ME`, `changeme`, `adminadmin`, `${...}`, `{{...}}`, `<...>`) MUST use `regexTarget = "match"` so a real secret sharing a line with a placeholder is still caught; an over-broad line-scoped allowlist fails silently. (2) Pinning — the workflow pins `GITLEAKS_VERSION` and SHA-pins `actions/checkout` and `gitleaks-action`; do not revert these to floating tags, as this is the supply-chain/secret-hygiene workflow itself. To scan full history locally: `gitleaks git --config .gitleaks.toml --redact -v` (needs gitleaks >= 8.18.0 for per-rule allowlist syntax).
+
 ## Deployment Context
 
 - **Host**: HP EliteDesk 800 G4, i7-8700, 16GB RAM, headless Debian
