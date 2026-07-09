@@ -425,6 +425,8 @@ services:
     volumes:
       - ${CONFIG_ROOT:-.}/cross-seed:/config
       - ${DATA_ROOT}:/data
+    environment:
+      - PROWLARR_API_KEY=${PROWLARR_API_KEY}
     command: daemon
     restart: always
     profiles:

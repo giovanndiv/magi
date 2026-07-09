@@ -59,6 +59,7 @@
 - Jellyfin anime plugins: AniDB, AniList, and TheTVDB plugins installed and configured. Anime library metadata downloaders set to AniDB > AniList > TheTVDB > TheMovieDb. Image fetchers same order. AniDB enabled for Seasons and Episodes.
 - Seerr anime metadata provider: changed from TMDB to TheTVDB for anime. Series stays as TMDB.
 - Cross-seed: config directory created at ~/magi/cross-seed/. Setup not yet complete — needs config.js with Prowlarr Torznab URLs and qBittorrent connection. Service already in docker-compose.yml behind cross-seed profile. Key config notes: qBittorrent connects via vpn:8080 not qbittorrent:8080, Prowlarr URLs use prowlarr:9696 internally.
+- Cross-seed Prowlarr API key: passed to the container via `PROWLARR_API_KEY` in docker-compose.yml, and the server-side gitignored config.js references it as `process.env.PROWLARR_API_KEY` to build the Torznab URLs. Both halves are required — the compose env var is inert without the config.js reference, and config.js will get an undefined key without the compose env var.
 - Bazarr: configured with OpenSubtitles provider, English language profile ✓
 - Seerr: setup wizard complete, connected to Jellyfin, Sonarr, Sonarr-anime, Radarr, Radarr-anime ✓
 - Subdomain routing: all active services migrated from path-prefix to subdomain routing ✓
