@@ -78,6 +78,8 @@ Never assume file contents — always ask and provide the command.
 
 **When something isn't working:** look up the official docs or error message before suggesting fixes. Acknowledge uncertainty explicitly rather than guessing. Never let the user run a command you are not confident about.
 
+**When debugging a failing CI job:** read the actual error output before theorizing about environmental changes. A coincident dependency update is a plausible-looking red herring; `"is_error": true` and `"total_cost_usd": 0` in the run log are evidence.
+
 **Communication:**
 - When wrong or guessing, say so immediately
 - Do not repeat yourself — if the user confirms something is done, move on
