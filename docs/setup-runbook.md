@@ -286,6 +286,16 @@ crontab -e
 - Start container: `docker compose up -d vaultwarden-backup`
 - Test: `docker exec vaultwarden-backup /app/backup.sh`
 
+**Vaultwarden CLI (`bw`) on nerv:**
+- Install the standalone `bw` binary to `/usr/local/bin/bw` (no Node dependency — use the standalone release, not the npm package).
+- Point it at the self-hosted server: `bw config server https://vaultwarden.geo-front.net`
+- Log in as the **dedicated service account** (separate from the personal vault, holds only machine-generated service credentials). Do not use the personal vault for automation.
+- Unattended unlock reads the master password from a file outside the repo:
+  `SESSION=$(bw unlock --passwordfile ~/.config/bw-service-pass --raw)`
+  The password file is `chmod 600`, owned by gendo, and never tracked.
+- `BW_SESSION` does not persist across shells, so every invocation must unlock fresh, act (with `--session "$SESSION"`), then `bw lock`.
+- The Vaultwarden container's healthcheck comes from the upstream image, not the compose file — do not add a compose healthcheck override for it.
+
 ### 3.13 Autobrr
 - Add `AUTOBRR_HOSTNAME=autobrr.geo-front.net` to `.env`
 - `mkdir -p /mnt/data/torrents/ratio-building && chown 1000:1000 /mnt/data/torrents/ratio-building`

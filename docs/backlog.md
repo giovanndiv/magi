@@ -17,11 +17,10 @@
 - qBittorrent seeding rules: verify minimum seed time and ratio are set correctly for each private tracker category to avoid HnR violations on DC (5 days / 1.0) and SP (10 days / 1.0).
 - LVM restructure: reformat both 14TB drives as a single LVM logical volume for true 28TB single filesystem. Required for native hardlink support without workarounds. Schedule during maintenance window when no active seeding obligations. Process: back up media, wipe drives, create LVM volume, restore media, git clone stack, docker compose up. Current workaround (media moved to disk2) provides hardlinks within 14TB cap.
 - Replace copies with hardlinks: run `hardlink -v /mnt/data/torrents /mnt/data/media` to convert existing duplicate files to hardlinks. Already run on May 20 2026 for existing library. Re-run after any bulk imports.
+- Traefik binds 0.0.0.0 on ports 80/443 and relies solely on ufw to block public access. An external test from a non-tailnet, non-LAN network (cellular, IPv6) confirmed the ports are NOT publicly reachable, so ufw is holding. But Docker is known to sometimes insert iptables rules that bypass ufw, and IPv6 is the likelier leak path. If any service ever appears reachable off-Tailscale, this is the first thing to re-check. Binding Traefik to the Tailscale interface would close it permanently, but hardcodes a Tailscale IP that can change and introduces a boot-ordering risk where Traefik fails to bind if Tailscale is not yet up.
+- apt upgrade on nerv — 103 packages pending, Debian bumped 13.4 to 13.5. Do during a maintenance window when cross-seed is idle and no seeding is at risk; check for a required reboot afterward and confirm the VPN container and qBittorrent come back healthy.
 
 ### Services To Add
-- **Cross-seed**: deferred until library grows. Already in docker-compose.yml behind profile. Enable with
-  `COMPOSE_PROFILES=cross-seed`. Automates cross-seeding torrents across trackers for better
-  availability. Needs configuration at `~/magi/cross-seed/config.js`.
 - **Cross-seed daemon mode**: the recovery run used a one-shot `dataDirs` search config. Strip `dataDirs` and switch cross-seed to daemon mode for ongoing cross-seeding of new downloads. When doing so, watch for injected torrents landing stopped/"done" and not announcing.
 - Immich: photo management, add when ready (note: needs ~3-4GB RAM, heaviest service)
 - Ollama + Open WebUI: local LLM, CPU only at 16GB RAM, expect ~5-10 tok/sec
@@ -40,6 +39,9 @@
 - **Vaultwarden**: deployed, signups disabled, admin panel enabled, Bitwarden extension connected ✓
 - **Profilarr**: deployed, Dumpstarr database linked, all four arr instances connected, profiles synced ✔
 - **Dozzle**: deployed (amir20/dozzle:latest, v10.6.5) via the ADD_SERVICE playbook. Container log viewer at dozzle.geo-front.net, gated behind the `dozzle` compose profile (now in server COMPOSE_PROFILES so it starts with the stack). Read-only docker socket, native `/dozzle healthcheck` (no shell/wget in image), simple file-based auth enabled (DOZZLE_AUTH_PROVIDER=simple, user `gendo`, hashed users.yml at ~/magi/dozzle/users.yml — server-only, `/dozzle/` gitignored). Login verified (correct creds → 200+JWT, bad creds → 401). ✓
+- **Vaultwarden CLI on nerv**: installed the Bitwarden CLI (`bw`, standalone binary at `/usr/local/bin/bw`, no Node dependency) pointed at the self-hosted Vaultwarden. Logged in as a dedicated **service account** separate from the personal vault, holding only machine-generated service credentials. Unattended unlock configured via a password file at `~/.config/bw-service-pass` (chmod 600, owned by gendo, outside the repo, never tracked). Verified full read/write: unlock, create item, read back, delete, lock. Rides the existing Vaultwarden GDrive backup since it is the same database. ✓
+- **Cross-seed steady-state**: switched from the one-shot recovery config (`dataDirs`) to ongoing daemon mode with `useClientTorrents`. Scoped to private trackers only (public indexers deliberately excluded from the torznab array). Prowlarr API key now passed via `PROWLARR_API_KEY` env var in compose rather than hardcoded in config.js. `searchCadence` and `rssCadence` set — without them the search job is disabled and the daemon does nothing. Closes the parked cross-seed daemon backlog item. ✓
+- **Vaultwarden SIGNUPS_ALLOWED drift**: was found set to `true` (runbook says it should be `false` after account creation). Fixed. ✓
 
 ### Configuration
 - Vaultwarden backup: configured rclone-backup with Google Drive (RcloneBackup remote), daily 2am cron, 30 day retention, zip encrypted. Backup verified working. ✔
@@ -49,7 +51,8 @@
 - Profilarr v2 migration: pending — v2 released May 2026, not compatible with v1. Wait for stability before migrating. New image will be ghcr.io/dictionarry-hub/profilarr:latest
 - Gluetun control server auth: pending — Gluetun will require auth on /v1/vpn/status in v3.40. Configure before upgrading.
 - Quality Definitions: set min/max values from TRaSH Guides in all four arr instances. One-time manual setup.
-- Radarr upgrade cutoff: set Upgrades Allowed cutoff in Movies 1080p profile to prevent unwanted upgrades affecting private tracker ratios.
+- Radarr auto-upgrades: verify "Upgrades Allowed" is disabled / the upgrade cutoff is set in the Movies 1080p profile (fix applied — confirm it stuck) so upgrade churn does not burn PT download credit and ratio.
+- Rotate the Prowlarr API key — it was pasted into a chat session during cross-seed configuration.
 - Unpackerr: add Sonarr Anime and Radarr Anime instances to docker-compose.yml environment variables.
 - First real run of CONFIGURE_SERVICE: use it on the next genuinely config-driven service (e.g. a Recyclarr/Profilarr sync config) as its validation-and-hardening pass.
 - Bazarr: fixed — was using opensubtitles.org credentials instead of opensubtitles.com. Account created on .com, authentication now working.
@@ -91,11 +94,14 @@
     /mnt/data/torrents)
   - seerr config directory pre-creation with correct ownership
 - Test and validate full Ansible playbook end-to-end on a fresh Debian install
+- Fix the review-bot poll loop detection in all three playbooks — "Claude finished" appears in the placeholder comment, so the loop can break early. Detect a real review by run duration or by the presence of actual review content.
+- Evaluate Dependabot for GitHub Action version updates. Actions were briefly SHA-pinned during the review-bot debugging and then reverted to floating tags (the pin was based on a wrong diagnosis). Floating tags are fine, but Dependabot would surface new versions as reviewable PRs rather than swapping them in silently.
 
 #### Done
 - **CONFIGURE_SERVICE playbook**: created `docs/playbooks/CONFIGURE_SERVICE.md`, the companion to ADD_SERVICE for config-driven services whose value lives in a hand-authored config file containing secrets, external API calls, or destructive actions. Covers config classification (secret / environment-specific / safety-behavior), a mount-visibility-and-breadth precondition, a handoff checkpoint where the human fills secrets server-side, a one-time-vs-steady-state distinction, and a gated human-watched first run that verifies the intended END STATE, not just that execution completed. cross-seed is the worked example. ✓
 - **Playbooks README / orchestrator**: created `docs/playbooks/README.md` as the index and router for the playbook set — routing guide (ADD vs REMOVE vs CONFIGURE), shared conventions stated once (SSH precondition, clean-tree, valid-config, the @claude two-round review cap, the root-owned-bind-mount chown chain, secrets-never-in-tracked-files), a capability map, and a roadmap of future playbooks. ✓
 - **gitleaks secret scanning (CI)**: added `.github/workflows/gitleaks.yml` running gitleaks on every PR and on push to master, with custom rules in `.gitleaks.toml` for this repo's exposure surface (PT passkeys/announce URLs, *arr and Prowlarr API keys, RFC1918 addresses). Full git history audited (281 commits) — clean, no leaks. `GITLEAKS_VERSION` pinned and actions SHA-pinned since this is the supply-chain/secret-hygiene workflow itself. ✓
+- **Playbook credential-persistence checkpoint**: ADD_SERVICE.md and CONFIGURE_SERVICE.md now encode the real `bw` procedure (prereq check, unlock fresh since `BW_SESSION` does not persist across shells, create `magi/<service>` entry, verify the write by reading it back, lock). Wired to the correct lifecycle points — pre-run credentials at the Handoff Checkpoint, first-run-minted credentials before daemon promotion in Gated First Run, and first-boot log credentials in ADD_SERVICE step 6. README documents that the procedure is intentionally duplicated across playbooks (indirection in a spec an executor follows step-by-step is worse than duplication) and that edits must be synced across all copies. ✓
 
 ## Maintenance
 
@@ -175,6 +181,12 @@ For hardlinks to work, both the download client and arr apps must share the same
 ### GitHub Claude bot polling
 - The bot edits its comment in place as it works. Do not poll based on comment count. Poll based on comment body containing "Claude finished" which signals the review is complete.
 
+### Claude review bot returns a stub and exits in ~2s
+The bot returning a stub ("I'll analyze this and get back to you") and exiting in ~2s is an **expired `CLAUDE_CODE_OAUTH_TOKEN`**, not an action-version problem. The workflow authenticates to GitHub fine (separate token) so it posts a placeholder comment, then fails to reach Anthropic and exits with a clean green run. Diagnose by checking the run log for `"total_cost_usd": 0` and `"is_error": true` — zero cost means the model was never invoked. Fix: regenerate the token (`claude setup-token`) and update the repo secret (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`). Tokens expire roughly quarterly with no warning; the token was rotated on 2026-07-10. NOTE: a floating action tag moving is a plausible-looking red herring here — the v1 tag does move frequently, but read the error before theorizing about the environment.
+
+### Review-bot poll-loop false positive
+The review bot posts "Claude finished" in its **placeholder** comment before it has actually reviewed. The standard poll loop in all three playbooks breaks on that string and can exit before a real review exists. Symptom: the loop returns instantly with a short comment. Verify with `gh run list --workflow=claude.yml --limit 2` — a real review takes minutes, a stub takes seconds. The detection logic needs fixing.
+
 ### Git / GitHub
 - **Fork always defaults to upstream base on PR creation** — always use gh CLI:
   `gh pr create --base master --head your-branch --title "title"`
@@ -206,6 +218,12 @@ Auto-upgrades in Radarr/Sonarr can trigger new downloads that affect ratio on pr
 
 ### Cross-seed data-based recovery (reseed existing library after unsatisfieds)
 When torrents are removed from the client but the data still exists on disk, cross-seed can rematch and reseed without re-downloading. Key setup: mount the FULL data root into the cross-seed container (not just the torrents dir) so it can see the media library; point `dataDirs` at the media paths; use `matchMode: "flexible"` for renamed library files; keep `skipRecheck: false` so injected torrents are verified before seeding; `linkDir` must be on the same mount as the data (cross-device hardlinks fail). Run as a one-shot search (`docker compose run --rm cross-seed search`), not daemon, for a recovery pass. NOTE: injected torrents can land in a stopped/"done" state and silently not announce to the tracker — force-resume them and confirm they appear as seeding on the tracker. Data-based matching only recovers content still on disk; content that was downloaded-then-deleted is unrecoverable and is a tracker-waiver conversation, not a technical fix.
+
+### Cross-seed search job disabled
+If `searchCadence` is unset or null in config.js, the periodic search feature is disabled entirely and the job API returns "search: unable to run, disabled in config". Same for `rssCadence` and RSS scanning. Both must be set for the daemon to do ongoing work. Do NOT run `docker compose run --rm cross-seed search` while the daemon is running — it corrupts the SQLite database. Trigger searches via the job API endpoint instead.
+
+### Cross-seed does not download content
+Cross-seed matches data you already hold against torrents on your other trackers and reseeds it. `rssCadence` watches for new uploads that match your EXISTING library — it does not grab new releases. It does not conflict with Autobrr's freeleech-only grabbing; they are separate mechanisms.
 
 ### "Indexer unavailable" in the arrs usually means a failed GRAB, not a down indexer
 Search is a cheap call that succeeds while the actual torrent-file fetch through Prowlarr fails (e.g. tracker returning an error page instead of a `.torrent`, or a download restriction). Diagnose by checking the Prowlarr-side download error, not just the arr's indexer status.
