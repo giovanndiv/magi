@@ -170,10 +170,11 @@ proceed.
      service account** whose vault holds **only** machine-generated service
      credentials, never the human's personal vault:
      - **Confirm prerequisites:** `command -v bw` succeeds and the Vaultwarden
-       service is reachable (`docker compose ps vaultwarden` shows healthy). If
-       either fails, **STOP** — hand the human the credential and the suggested
-       entry name, and wait for explicit confirmation it has been stored before
-       proceeding.
+       service is reachable (`docker compose ps vaultwarden` shows healthy — the
+       healthcheck comes from the upstream Vaultwarden image, not this repo's
+       compose file). If either fails, **STOP** — hand the human the credential
+       and the suggested entry name, and wait for explicit confirmation it has
+       been stored before proceeding.
      - **Unlock fresh** (`BW_SESSION` does not persist across shells, so each
        invocation unlocks, acts, and locks):
        `export BW_SESSION=$(bw unlock --passwordfile ~/.config/bw-service-pass --raw)`
@@ -200,6 +201,13 @@ proceed.
      the service status is **not** `Restarting` and has been stable for at least
      30 seconds, then scan recent logs for an obvious readiness line or a fatal
      error.
+
+   Once health is confirmed, check the startup logs for a **generated
+   credential** the service printed on first boot (a first-boot admin password,
+   an API key). If one is present, it must be persisted via the **Credential
+   persistence checkpoint** procedure in step 4 before the run is considered
+   complete — a first-boot credential printed only to the logs is exactly the
+   kind of secret this checkpoint exists to keep from being stranded.
 
 7. **Troubleshooting loop (max 5 iterations):**
    - On unhealthy / restarting / error: pull logs with

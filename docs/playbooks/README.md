@@ -83,6 +83,14 @@ and never tracked). `BW_SESSION` does not persist across shells, so every write
 unlocks fresh, creates the entry, verifies it by reading it back, and locks. The
 full procedure lives in `ADD_SERVICE.md` and `CONFIGURE_SERVICE.md`.
 
+The procedure is **intentionally restated in full in each playbook** rather than
+referenced — a spec an executor follows step-by-step should not require reading
+another file mid-run, and indirection in a spec is worse than duplication. The
+cost is that any change to the procedure (the `magi/<service>` naming
+convention, the `bw unlock` invocation, the read-back verification step) **must
+be applied to every copy** — `ADD_SERVICE.md`, `CONFIGURE_SERVICE.md`, and this
+summary.
+
 ## Capability map
 
 | Playbook | Purpose | Branch convention |

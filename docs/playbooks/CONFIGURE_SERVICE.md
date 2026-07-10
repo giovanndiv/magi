@@ -174,20 +174,25 @@ The human then, **on the server**:
 - **approves the risky choices** (the safety/behavior settings and the proposed
   environment values).
 
-**Credential persistence checkpoint.** If this run generates or sets any
-credential the human will need later (an admin password, an API token the
-service mints on first run, an auth secret), that credential **must be persisted
-to the Vaultwarden service vault before the run is allowed to complete**. Do not
-strand a secret.
+**Credential persistence checkpoint.** If, **at this point — before any run**,
+you or the human have generated or set a credential that will be needed later (a
+password the human supplies, or one you generate and write into the config —
+e.g. a hashed auth password), that credential **must be persisted to the
+Vaultwarden service vault before proceeding**. Do not strand a secret.
+(Credentials the *service itself* mints on its **first run** don't exist yet —
+those are caught by this same procedure at the Gated First Run step below,
+before promotion to daemon mode.)
 
 Run the following over SSH on nerv. This writes to a **dedicated Vaultwarden
 service account** whose vault holds **only** machine-generated service
 credentials — it is not the human's personal vault:
 
 - **Confirm prerequisites.** `command -v bw` must succeed, and the Vaultwarden
-  service must be reachable (`docker compose ps vaultwarden` shows healthy). If
-  either fails, **STOP** — hand the human the credential and the suggested entry
-  name, and wait for explicit confirmation it has been stored before proceeding.
+  service must be reachable (`docker compose ps vaultwarden` shows healthy — the
+  healthcheck comes from the upstream Vaultwarden image, not this repo's compose
+  file). If either fails, **STOP** — hand the human the credential and the
+  suggested entry name, and wait for explicit confirmation it has been stored
+  before proceeding.
 - **Unlock fresh** — `BW_SESSION` does not persist across shells, so every
   invocation unlocks, acts, and locks:
 
@@ -252,7 +257,17 @@ re-runs a destructive action.
    `ADD_SERVICE.md`) once, and only once, the human approves the observed first
    run.
 
-5. **If the first run fails: do NOT loop.** Read the logs, form **ONE**
+5. **Persist any credential the first run itself produced — a precondition on
+   that promotion.** If the observed first run **minted, printed, or otherwise
+   produced** any credential the human will need later (an admin password shown
+   at first boot, an API token the service generated, a session secret in the
+   logs), re-invoke the credential persistence procedure **now** — follow the
+   Credential persistence checkpoint procedure in the Handoff Checkpoint section
+   above. Do **NOT** promote to daemon mode until that credential is persisted
+   and the write is verified. This is the credential that did not yet exist at
+   the Handoff Checkpoint, so it is caught here instead.
+
+6. **If the first run fails: do NOT loop.** Read the logs, form **ONE**
    hypothesis, present it and the proposed fix to the human, and **wait**. Never
    re-run a destructive action autonomously to "see if it works now."
 
