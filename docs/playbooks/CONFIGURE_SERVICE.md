@@ -174,18 +174,39 @@ The human then, **on the server**:
 - **approves the risky choices** (the safety/behavior settings and the proposed
   environment values).
 
-**If the config itself generates or contains a credential the human will need
-later** (an API key, a token the service mints on first run), that credential
-**must be confirmed stored in durable external storage** (the human's password
-manager / Vaultwarden) **before proceeding** — do not strand a secret.
+**Credential persistence checkpoint.** If this run generates or sets any
+credential the human will need later (an admin password, an API token the
+service mints on first run, an auth secret), that credential **must be persisted
+to the Vaultwarden service vault before the run is allowed to complete**. Do not
+strand a secret.
 
-> **v1:** the human handles secret storage manually. **Future hook:** a
-> `bw`/Vaultwarden CLI integration can automate the "store this credential"
-> step once proven, mirroring how `ADD_SERVICE.md` was hardened after real runs.
-> Leave this marker; do not build it speculatively.
+Run the following over SSH on nerv. This writes to a **dedicated Vaultwarden
+service account** whose vault holds **only** machine-generated service
+credentials — it is not the human's personal vault:
+
+- **Confirm prerequisites.** `command -v bw` must succeed, and the Vaultwarden
+  service must be reachable (`docker compose ps vaultwarden` shows healthy). If
+  either fails, **STOP** — hand the human the credential and the suggested entry
+  name, and wait for explicit confirmation it has been stored before proceeding.
+- **Unlock fresh** — `BW_SESSION` does not persist across shells, so every
+  invocation unlocks, acts, and locks:
+
+      export BW_SESSION=$(bw unlock --passwordfile ~/.config/bw-service-pass --raw)
+
+- **Create the entry** using the naming convention `magi/<service>`, with the
+  username, the generated password, and a note containing the service URL and
+  creation date. Build it with `bw get template item`, populate the fields with
+  `jq`, then `bw encode | bw create item`.
+- **Verify the write by reading it back:** `bw list items --search magi/<service>`
+  must return the entry. A silent failed write is the exact failure this
+  checkpoint exists to prevent — do not assume success.
+- **Lock when done:** `bw lock`.
+- **Never** echo the plaintext credential into a tracked file, a log, a commit
+  message, or a PR comment.
 
 **Wait for explicit human confirmation** that secrets are filled, safety values
-approved, and any generated credential stored, before continuing.
+approved, and any generated credential persisted (and verified) to the service
+vault, before continuing.
 
 ## One-time vs Steady-state
 
@@ -283,8 +304,16 @@ Steps: commit and push `feat/configure-<service>`, then:
   explicit human go.**
 - **Never write real secrets, keys, passwords, or private tracker details to any
   tracked file.**
-- **Never leave a generated human-facing credential unstored** — confirm it's in
-  durable external storage first.
+- **Never leave a generated human-facing credential unstored** — persist it to
+  the Vaultwarden service vault and verify the write, or explicitly hand it to
+  the human and receive confirmation it was stored, before completing the run.
+- **Never store anything in the Vaultwarden service vault other than
+  machine-generated service credentials.** It is scoped deliberately; a personal
+  secret placed there breaks the isolation it exists to provide.
+- **Never read from, write to, or attempt to unlock the human's personal
+  Vaultwarden vault.**
+- **Never move, copy, commit, or echo the contents of
+  `~/.config/bw-service-pass`.**
 - **Never touch the storage layout, the mergerfs/snapraid data mounts, or the
   qBittorrent / VPN (`network_mode: "service:vpn"`) coupling.**
 - **No autonomous re-run loop on a destructive first run** — one hypothesis,

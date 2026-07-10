@@ -71,6 +71,18 @@ not a preference. Every playbook inherits this rule:
   repo's exposure surface (tracker passkeys/announce URLs, *arr/Prowlarr API keys,
   and Tailscale/RFC1918 IPs).
 
+**Persisting generated service credentials.** When a playbook run generates a
+credential a human will need later (an admin password, an API token, an auth
+secret), it is persisted to a **dedicated Vaultwarden service-account vault** via
+the `bw` CLI on nerv, under the naming convention `magi/<service>`. That vault is
+scoped to **machine-generated service credentials only** and is isolated from the
+human's personal Vaultwarden vault — nothing personal goes in it, and playbooks
+never touch the personal vault. Unattended unlock uses a password file at
+`~/.config/bw-service-pass` (chmod 600, owned by `gendo`, living outside the repo
+and never tracked). `BW_SESSION` does not persist across shells, so every write
+unlocks fresh, creates the entry, verifies it by reading it back, and locks. The
+full procedure lives in `ADD_SERVICE.md` and `CONFIGURE_SERVICE.md`.
+
 ## Capability map
 
 | Playbook | Purpose | Branch convention |

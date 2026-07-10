@@ -162,6 +162,32 @@ proceed.
      tracked file, and add the data dir to `.gitignore` so it can never be
      committed.
 
+   - **Credential persistence checkpoint.** If this run generates or sets any
+     credential a human will need later (an admin password, an API token, an auth
+     secret), that credential **must be persisted to the Vaultwarden service
+     vault before the run is allowed to complete**. Do not strand a secret. Run
+     the following over SSH on nerv — it writes to a **dedicated Vaultwarden
+     service account** whose vault holds **only** machine-generated service
+     credentials, never the human's personal vault:
+     - **Confirm prerequisites:** `command -v bw` succeeds and the Vaultwarden
+       service is reachable (`docker compose ps vaultwarden` shows healthy). If
+       either fails, **STOP** — hand the human the credential and the suggested
+       entry name, and wait for explicit confirmation it has been stored before
+       proceeding.
+     - **Unlock fresh** (`BW_SESSION` does not persist across shells, so each
+       invocation unlocks, acts, and locks):
+       `export BW_SESSION=$(bw unlock --passwordfile ~/.config/bw-service-pass --raw)`
+     - **Create the entry** using the naming convention `magi/<service>`, with the
+       username, the generated password, and a note containing the service URL and
+       creation date — build it with `bw get template item`, populate fields with
+       `jq`, then `bw encode | bw create item`.
+     - **Verify the write by reading it back:** `bw list items --search
+       magi/<service>` must return the entry. A silent failed write is the exact
+       failure this checkpoint exists to prevent — do not assume success.
+     - **Lock when done:** `bw lock`.
+     - **Never** echo the plaintext credential into a tracked file, a log, a
+       commit message, or a PR comment.
+
 5. Bring the service up:
    `docker compose up -d <service>`
    (use `--force-recreate` if env vars used in **labels** changed).
@@ -265,6 +291,16 @@ On a clean review:
   qBittorrent / VPN (`network_mode: "service:vpn"`) configuration.**
 - **Never write real secrets, API keys, passwords, IPs, or private tracker
   details to any tracked file.**
+- **Never complete a run that generated a human-facing credential without
+  verifying it was written to the Vaultwarden service vault**, or explicitly
+  handing it to the human and receiving confirmation it was stored.
+- **Never store anything in the Vaultwarden service vault other than
+  machine-generated service credentials.** It is scoped deliberately; a personal
+  secret placed there breaks the isolation it exists to provide.
+- **Never read from, write to, or attempt to unlock the human's personal
+  Vaultwarden vault.**
+- **Never move, copy, commit, or echo the contents of
+  `~/.config/bw-service-pass`.**
 - **Never disable or weaken another service's healthcheck.**
 - **Never force-merge past unresolved high-level review warnings.**
 - **Never exceed 5 troubleshooting iterations or 2 review rounds without
