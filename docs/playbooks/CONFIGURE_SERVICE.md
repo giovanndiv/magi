@@ -252,20 +252,22 @@ re-runs a destructive action.
    the data landed where intended) and have the human confirm *that*, not merely
    that the tool exited without error.
 
-4. **Only promote to persistent / daemon mode after that confirmation** — flip
-   to `command: daemon` (or `restart: always` / profile-persist per
-   `ADD_SERVICE.md`) once, and only once, the human approves the observed first
-   run.
+4. **Persist any credential the first run itself produced — before promoting.**
+   If the observed first run **minted, printed, or otherwise produced** any
+   credential the human will need later (an admin password shown at first boot,
+   an API token the service generated, a session secret in the logs), re-invoke
+   the credential persistence procedure **now** — follow the Credential
+   persistence checkpoint procedure in the Handoff Checkpoint section above. This
+   is the credential that did not yet exist at the Handoff Checkpoint, so it is
+   caught here instead. Do **NOT** proceed to promotion until it is persisted to
+   the Vaultwarden service vault and the write is verified.
 
-5. **Persist any credential the first run itself produced — a precondition on
-   that promotion.** If the observed first run **minted, printed, or otherwise
-   produced** any credential the human will need later (an admin password shown
-   at first boot, an API token the service generated, a session secret in the
-   logs), re-invoke the credential persistence procedure **now** — follow the
-   Credential persistence checkpoint procedure in the Handoff Checkpoint section
-   above. Do **NOT** promote to daemon mode until that credential is persisted
-   and the write is verified. This is the credential that did not yet exist at
-   the Handoff Checkpoint, so it is caught here instead.
+5. **Only promote to persistent / daemon mode once BOTH conditions are met:**
+   the human has confirmed the observed first run achieved the intended end
+   state (step 3), **AND** any credential minted during that run has been
+   persisted to the Vaultwarden service vault with the write verified (step 4).
+   Only then flip to `command: daemon` (or `restart: always` / profile-persist
+   per `ADD_SERVICE.md`), once and only once.
 
 6. **If the first run fails: do NOT loop.** Read the logs, form **ONE**
    hypothesis, present it and the proposed fix to the human, and **wait**. Never
