@@ -71,6 +71,26 @@ not a preference. Every playbook inherits this rule:
   repo's exposure surface (tracker passkeys/announce URLs, *arr/Prowlarr API keys,
   and Tailscale/RFC1918 IPs).
 
+**Persisting generated service credentials.** When a playbook run generates a
+credential a human will need later (an admin password, an API token, an auth
+secret), it is persisted to a **dedicated Vaultwarden service-account vault** via
+the `bw` CLI on nerv, under the naming convention `magi/<service>`. That vault is
+scoped to **machine-generated service credentials only** and is isolated from the
+human's personal Vaultwarden vault — nothing personal goes in it, and playbooks
+never touch the personal vault. Unattended unlock uses a password file at
+`~/.config/bw-service-pass` (chmod 600, owned by `gendo`, living outside the repo
+and never tracked). `BW_SESSION` does not persist across shells, so every write
+unlocks fresh, creates the entry, verifies it by reading it back, and locks. The
+full procedure lives in `ADD_SERVICE.md` and `CONFIGURE_SERVICE.md`.
+
+The procedure is **intentionally restated in full in each playbook** rather than
+referenced — a spec an executor follows step-by-step should not require reading
+another file mid-run, and indirection in a spec is worse than duplication. The
+cost is that any change to the procedure (the `magi/<service>` naming
+convention, the `bw unlock` invocation, the read-back verification step) **must
+be applied to every copy** — `ADD_SERVICE.md`, `CONFIGURE_SERVICE.md`, and this
+summary.
+
 ## Capability map
 
 | Playbook | Purpose | Branch convention |
